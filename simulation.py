@@ -1,6 +1,14 @@
 from dataclasses import dataclass
 import pandas as pd
 
+
+# Schedule reward is differnce of inititial state value and final state value, this is the undiscounted reward
+# Discounted schedule reward: gamma^N * (Q_end(c_i, s_j) – Q_start(c_i, s_j))
+# We must use the expected utility of a scheudle which is the dicounted * the probility that it will actually hapen
+    # This probobility is calculated by taking into account how the schedule affects the other countries, and how benificial it would be
+    # for them
+
+
 @dataclass
 class Country:
     
