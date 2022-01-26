@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 import pandas as pd
 from rx import empty
+import copy
 
 
 # Schedule reward is differnce of inititial state value and final state value, this is the undiscounted reward
@@ -67,42 +68,46 @@ class Country:
             return []
         
     def housing_transform(self, scaler: int):
+            
+        new_state = copy.deepcopy(self)
         
-        if (self.population >= 5*scaler and self.metalic_elm >= 1*scaler 
-            and self.timber >= 5*scaler and self.metalic_alloys >= 3*scaler): 
-            
-            self.population -= 5*scaler
-            self.metalic_elm -= 1*scaler
-            self.timber -= 5*scaler
-            self.metalic_alloys -= 3*scaler
-            
-            self.housing += 1*scaler
-            self.housing_waste += 1*scaler
-            self.population += 5*scaler
+        new_state.population -= 5*scaler
+        new_state.metalic_elm -= 1*scaler
+        new_state.timber -= 5*scaler
+        new_state.metalic_alloys -= 3*scaler
+        
+        new_state.housing += 1*scaler
+        new_state.housing_waste += 1*scaler
+        new_state.population += 5*scaler
+        
+        return new_state
     
     def alloys_transform(self, scaler: int):
+  
+        new_state = copy.deepcopy(self)
         
-        if (self.population >= 1*scaler, self.metalic_elm >= 2*scaler):
-            
-            self.population -= 1*scaler
-            self.metalic_elm -= 2*scaler
-            
-            self.population += 1*scaler
-            self.metalic_alloys += 1*scaler
-            self.metalic_waste += 1*scaler
+        new_state.population -= 1*scaler
+        new_state.metalic_elm -= 2*scaler
+        
+        new_state.population += 1*scaler
+        new_state.metalic_alloys += 1*scaler
+        new_state.metalic_waste += 1*scaler
+        
+        return new_state
             
     def electronics_transform(self, scaler: int):
+
+        new_state = copy.deepcopy(self)
         
-        if (self.population >= 1*scaler and self.metalic_elm >= 3*scaler
-            and self.metalic_alloys >= 2*scaler):
-            
-            self.population -= 1*scaler
-            self.metalic_elm -= 3*scaler
-            self.metalic_alloys -= 2*scaler
-            
-            self.population += 1*scaler
-            self.electronics += 2*scaler
-            self.electronics_waste += 1*scaler
+        new_state.population -= 1*scaler
+        new_state.metalic_elm -= 3*scaler
+        new_state.metalic_alloys -= 2*scaler
+        
+        new_state.population += 1*scaler
+        new_state.electronics += 2*scaler
+        new_state.electronics_waste += 1*scaler
+        
+        return new_state
             
                        
 @dataclass
@@ -130,14 +135,12 @@ class HousingTransform:
     housing_waste__output: int
     population_output: int
     
-    def __init__(self, pop: int, elm: int, timber: int, alloy: int) -> None:
-        
-        scaler = self.population_input / 5
-        
-        self.population_input = pop
-        self.metalic_elm_input = elm
-        self.timber_input = timber
-        self.metalic_alloys_input = alloy
+    def __init__(self, state: Country, scaler: int) -> None:
+                
+        self.population_input = state.population
+        self.metalic_elm_input = state.metalic_elm
+        self.timber_input = state.timber
+        self.metalic_alloys_input = state.metalic_alloys
         
         self.housing_output = 1 * scaler
         self.housing_waste__output = 1 * scaler
@@ -154,12 +157,10 @@ class AlloyTransform:
     metalic_alloy_output: int
     metalic_allow_waste_ouptut: int
     
-    def __init__(self, pop: int, elm: int) -> None:
+    def __init__(self, state: Country, scaler: int) -> None:
         
-        scaler = pop / 1
-        
-        self.population_input = pop
-        self.metalic_elm_input = elm
+        self.population_input = state.population
+        self.metalic_elm_input = state.metalic_elm
         
         self.population_output = 1 * scaler
         self.metalic_alloy_output = 1 * scaler
@@ -177,13 +178,11 @@ class ElectronicTransform:
     electronics_output: int
     electronics_waste_output: int
     
-    def __init__(self, pop: int, elm: int, alloy: int) -> None:
-        
-        scaler = pop / 1
-        
-        self.population_input = pop
-        self.metalic_elm_input = elm
-        self.metalic_alloy_input = alloy
+    def __init__(self, state: Country, scaler: int) -> None:
+                
+        self.population_input = state.population
+        self.metalic_elm_input = state.metalic_elm
+        self.metalic_alloy_input = state.metalic_alloys
         
         self.population_output = 1 * scaler
         self.electronics_output = 2 * scaler
@@ -272,6 +271,11 @@ class Simulation:
         housing_scalers = state.can_housing_transform()
         alloy_scalers = state.can_alloys_transform()
         electronics_scalers = state.can_electronics_transform()
+        
+        for scaler in housing_scalers:
+            
+            trans = HousingTransform(state, scaler)
+            new_state = state
         
         
     
