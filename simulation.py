@@ -34,6 +34,38 @@ class Country:
         
         return round(resource_score + 2*developement_score - waste_score, 2)
     
+    def can_housing_transform(self):
+        
+        if (self.population >= 5 and self.metalic_elm >= 1 
+            and self.timber >= 5 and self.metalic_alloys >= 3): 
+            
+            max_scaler = int(self.population / 5)
+            return [i+1 for i in range(max_scaler)]
+        
+        else:
+            return []
+    
+    def can_alloys_transform(self):
+        
+        if (self.population >= 1, self.metalic_elm >= 2):
+            
+            max_scaler = int(self.population / 1)
+            return [i+1 for i in range(max_scaler)]
+        
+        else:
+            return []
+    
+    def can_electronics_transform(self):
+        
+        if (self.population >= 1 and self.metalic_elm >= 3
+            and self.metalic_alloys >= 2):
+            
+            max_scaler = int(self.population / 1)
+            return [i+1 for i in range(max_scaler)]
+        
+        else:
+            return []
+        
     def housing_transform(self, scaler: int):
         
         if (self.population >= 5*scaler and self.metalic_elm >= 1*scaler 
@@ -132,6 +164,7 @@ class AlloyTransform:
         self.population_output = 1 * scaler
         self.metalic_alloy_output = 1 * scaler
         self.metalic_allow_waste_ouptut = 1 * scaler
+  
         
 @dataclass
 class ElectronicTransform:
@@ -196,6 +229,7 @@ class Simulation:
     
     country: Country
     frontier: PriorityQueue
+    solutions: PriorityQueue
     depth: int
     
     def __init__(self, countries_file_name: str, weights_file_name: str, country: int, depth: int) -> None:
@@ -205,6 +239,7 @@ class Simulation:
         self.depth = depth
         self.countries = []
         self.frontier = PriorityQueue()
+        self.solutions = PriorityQueue()
         
         self.load()
         
@@ -230,12 +265,32 @@ class Simulation:
         for index, row in df.iterrows(): 
            self.countries.append(Country(*row.values))
     
+    def generate_succesors(self, state: Country):
+        
+        succesors = []
+        
+        housing_scalers = state.can_housing_transform()
+        alloy_scalers = state.can_alloys_transform()
+        electronics_scalers = state.can_electronics_transform()
+        
+        
+    
     def search(self):
         
-        self.frontier.push((self.country.state_value(), []))
+        self.frontier.push((self.country.state_value(), [(self.country)]))
         
-        while True:
-            pass
+        while not self.frontier.empty():
+            
+            path = self.frontier.pop()
+            
+            if len(path[1]) >= 3:
+                self.solutions.push(path)
+                continue
+            
+            
+            
+
+            
             
             
         
