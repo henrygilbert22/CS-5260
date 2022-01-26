@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 import pandas as pd
+from rx import empty
 
 
 # Schedule reward is differnce of inititial state value and final state value, this is the undiscounted reward
@@ -85,26 +86,78 @@ class ResourceWeights:
     electronics_waste: float = 0.0     
     housing_waste: float = 0.0     
 
+@dataclass
+class HousingTransform:
+    
+    population_input: int
+    metalic_elm_input: int
+    timber_input: int
+    metalic_alloys_input: int
+    
+    housing_output: int
+    housing_waste__output: int
+    population_output: int
+    
+    def __init__(self, pop: int, elm: int, timber: int, alloy: int) -> None:
+        
+        scaler = self.population_input / 5
+        
+        self.population_input = pop
+        self.metalic_elm_input = elm
+        self.timber_input = timber
+        self.metalic_alloys_input = alloy
+        
+        self.housing_output = 1 * scaler
+        self.housing_waste__output = 1 * scaler
+        self.population_output = 5 * scaler
+        
 
+@dataclass 
+class AlloyTransform:
+    
+    population_input: int
+    metalic_elm_input: int
+    
+    population_output: int
+    metalic_alloy_output: int
+    metalic_allow_waste_ouptut: int
+    
+    def __init__(self, pop: int, elm: int) -> None:
+        
+        scaler = pop / 1
+        
+        self.population_input = pop
+        self.metalic_elm_input = elm
+        
+        self.population_output = 1 * scaler
+        self.metalic_alloy_output = 1 * scaler
+        self.metalic_allow_waste_ouptut = 1 * scaler
+        
+
+    
 class PriorityQueue:
     
-    priority_queue: list
+    priority_queue: list[tuple]
     
     def __init__(self):
         
         self.priority_queue = []
   
-    def insert(self, data):
+    def push(self, data: tuple) -> None:
         
         self.priority_queue.append(data)
+    
+    def empty(self):
         
-    def pop(self):
+        return len(self.priority_queue) == 0
+    
+    def pop(self) -> object:
         
         max_value = 0
         
         for i in range(len(self.priority_queue)):
             
-            if self.priority_queue[i] > self.priority_queue[max_value]:
+            if self.priority_queue[i][0] > self.priority_queue[max_value][0]:       # Comparing value
                 max_value = i
                 
         selected_item = self.priority_queue[max_value]
@@ -157,6 +210,8 @@ class Simulation:
            self.countries.append(Country(*row.values))
     
     def search(self):
+        
+        self.frontier.push((self.country.state_value(), []))
         
         while True:
             pass
