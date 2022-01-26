@@ -11,9 +11,9 @@ class Country:
     metalic_alloys: int
     electronics: int
     housing: int
-    waste1: int = 0     # Waste for metalic_alloys
-    waste2: int = 0     # Waste for electronics
-    waste3: int = 0     # Waste for housing
+    metalic_waste: int = 0     
+    electronics_waste: int = 0     
+    housing_waste: int = 0     
     
     def state_value(self) -> float:
         
@@ -23,6 +23,46 @@ class Country:
         
         return round(resource_score + 2*developement_score - waste_score, 2)
     
+    def housing_transform(self, scaler: int):
+        
+        if (self.population >= 5*scaler and self.metalic_elm >= 1*scaler 
+            and self.timber >= 5*scaler and self.metalic_alloys >= 3*scaler): 
+            
+            self.population -= 5*scaler
+            self.metalic_elm -= 1*scaler
+            self.timber -= 5*scaler
+            self.metalic_alloys -= 3*scaler
+            
+            self.housing += 1*scaler
+            self.housing_waste += 1*scaler
+            self.population += 5*scaler
+    
+    def alloys_transform(self, scaler: int):
+        
+        if (self.population >= 1*scaler, self.metalic_elm >= 2*scaler):
+            
+            self.population -= 1*scaler
+            self.metalic_elm -= 2*scaler
+            
+            self.population += 1*scaler
+            self.metalic_alloys += 1*scaler
+            self.metalic_waste += 1*scaler
+            
+    def electronics_transform(self, scaler: int):
+        
+        if (self.population >= 1*scaler and self.metalic_elm >= 3*scaler
+            and self.metalic_alloys >= 2*scaler):
+            
+            self.population -= 1*scaler
+            self.metalic_elm -= 3*scaler
+            self.metalic_alloys -= 2*scaler
+            
+            self.population += 1*scaler
+            self.electronics += 2*scaler
+            self.electronics_waste += 1*scaler
+            
+            
+            
 @dataclass
 class ResourceWeights:
     
@@ -32,9 +72,9 @@ class ResourceWeights:
     metalic_alloys: float
     electronics: float
     housing: int
-    waste1: float = 0.0     # Waste for metalic_alloys
-    waste2: float = 0.0     # Waste for electronics
-    waste3: float = 0.0     # Waste for housing
+    metalic_waste: float = 0.0     
+    electronics_waste: float = 0.0     
+    housing_waste: float = 0.0     
 
 
 class Simulation:
