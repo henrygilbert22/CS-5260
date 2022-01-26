@@ -133,7 +133,28 @@ class AlloyTransform:
         self.metalic_alloy_output = 1 * scaler
         self.metalic_allow_waste_ouptut = 1 * scaler
         
-
+@dataclass
+class ElectronicTransform:
+    
+    population_input: int
+    metalic_elm_input: int
+    metalic_alloy_input: int
+    
+    population_output: int
+    electronics_output: int
+    electronics_waste_output: int
+    
+    def __init__(self, pop: int, elm: int, alloy: int) -> None:
+        
+        scaler = pop / 1
+        
+        self.population_input = pop
+        self.metalic_elm_input = elm
+        self.metalic_alloy_input = alloy
+        
+        self.population_output = 1 * scaler
+        self.electronics_output = 2 * scaler
+        self.electronics_waste_output = 1 * scaler
     
 class PriorityQueue:
     
