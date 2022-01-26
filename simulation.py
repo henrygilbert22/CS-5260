@@ -187,10 +187,17 @@ class ElectronicTransform:
         self.population_output = 1 * scaler
         self.electronics_output = 2 * scaler
         self.electronics_waste_output = 1 * scaler
+   
+
+@dataclass
+class Solution:
+    
+    expected_utility: float
+    path: list
     
 class PriorityQueue:
     
-    priority_queue: list[tuple]
+    priority_queue: list[Solution]
     
     def __init__(self):
         
@@ -210,7 +217,7 @@ class PriorityQueue:
         
         for i in range(len(self.priority_queue)):
             
-            if self.priority_queue[i][0] > self.priority_queue[max_value][0]:       # Comparing value
+            if self.priority_queue[i].expected_utility > self.priority_queue[max_value].expected_utility:       # Comparing value
                 max_value = i
                 
         selected_item = self.priority_queue[max_value]
@@ -264,7 +271,7 @@ class Simulation:
         for index, row in df.iterrows(): 
            self.countries.append(Country(*row.values))
     
-    def generate_succesors(self, state: Country):
+    def generate_succesors(self, state: Country, path: list):
         
         succesors = []
         
@@ -286,11 +293,14 @@ class Simulation:
             trans = ElectronicTransform(state, scaler)
             new_state = state.electronics_transform(scaler)
             succesors.append([trans, new_state])
+        
+        
             
     
     def search(self):
         
-        self.frontier.push((self.country.state_value(), [[None, self.country]]))
+        initial_solution = Solution(self.country.state_value(), [[None, self.country]])
+        self.frontier.push(initial_solution)            # Maybe change how were storing data here, dataclass?
         
         while not self.frontier.empty():
             
