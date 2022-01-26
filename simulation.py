@@ -15,6 +15,14 @@ class Country:
     waste2: int = 0     # Waste for electronics
     waste3: int = 0     # Waste for housing
     
+    def state_value(self) -> float:
+        
+        resource_score =  self.metalic_alloys + self.timber + self.metalic_alloys
+        developement_score = self.metalic_alloys + self.electronics + self.housing
+        waste_score = self.waste1 + self.waste2 + self.waste3
+        
+        return round(resource_score + 2*developement_score - waste_score, 2)
+    
 @dataclass
 class ResourceWeights:
     
@@ -50,8 +58,7 @@ class Simulation:
         
         self.load_countries(self.countries_file_name)
         self.load_weights(self.weights_file_name)
-        
-        
+    
     def load_weights(self, file_name: str):
         
         df = pd.read_excel(file_name)
