@@ -98,7 +98,7 @@ class PriorityQueue:
         
         self.priority_queue.append(data)
         
-    def delete(self):
+    def pop(self):
         
         max_value = 0
         
@@ -121,14 +121,14 @@ class Simulation:
     weights_file_name: str
     
     country: Country
-    
     frontier: PriorityQueue
+    depth: int
     
-    def __init__(self, countries_file_name: str, weights_file_name: str, country: int) -> None:
+    def __init__(self, countries_file_name: str, weights_file_name: str, country: int, depth: int) -> None:
         
         self.countries_file_name = countries_file_name
         self.weights_file_name = weights_file_name
-        
+        self.depth = depth
         self.countries = []
         self.frontier = PriorityQueue()
         
@@ -166,7 +166,7 @@ class Simulation:
         
 def main():
     
-    s = Simulation('Example-Initial-Countries.xlsx', 'Example-Sample-Resources.xlsx')
+    s = Simulation('Example-Initial-Countries.xlsx', 'Example-Sample-Resources.xlsx', 0, 3)
 
 if __name__ == '__main__':
     main()
