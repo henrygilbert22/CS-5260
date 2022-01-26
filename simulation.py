@@ -7,6 +7,8 @@ import pandas as pd
 # We must use the expected utility of a scheudle which is the dicounted * the probility that it will actually hapen
     # This probobility is calculated by taking into account how the schedule affects the other countries, and how benificial it would be
     # for them
+    
+# Search algo can not be recursive
 
 
 @dataclass
@@ -69,8 +71,7 @@ class Country:
             self.electronics += 2*scaler
             self.electronics_waste += 1*scaler
             
-            
-            
+                       
 @dataclass
 class ResourceWeights:
     
@@ -85,6 +86,32 @@ class ResourceWeights:
     housing_waste: float = 0.0     
 
 
+class PriorityQueue:
+    
+    priority_queue: list
+    
+    def __init__(self):
+        
+        self.priority_queue = []
+  
+    def insert(self, data):
+        
+        self.priority_queue.append(data)
+        
+    def delete(self):
+        
+        max_value = 0
+        
+        for i in range(len(self.priority_queue)):
+            
+            if self.priority_queue[i] > self.priority_queue[max_value]:
+                max_value = i
+                
+        selected_item = self.priority_queue[max_value]
+        del self.priority_queue[max_value]
+        
+        return selected_item
+                          
 class Simulation:
     
     countries: list[Country]
@@ -93,14 +120,21 @@ class Simulation:
     countries_file_name: str
     weights_file_name: str
     
-    def __init__(self, countries_file_name: str, weights_file_name: str) -> None:
+    country: Country
+    
+    frontier: PriorityQueue
+    
+    def __init__(self, countries_file_name: str, weights_file_name: str, country: int) -> None:
         
         self.countries_file_name = countries_file_name
         self.weights_file_name = weights_file_name
         
         self.countries = []
+        self.frontier = PriorityQueue()
         
         self.load()
+        
+        self.country = self.countries[country]
     
     def load(self):
         
@@ -121,6 +155,13 @@ class Simulation:
         
         for index, row in df.iterrows(): 
            self.countries.append(Country(*row.values))
+    
+    def search(self):
+        
+        while True:
+            pass
+            
+            
         
         
 def main():
