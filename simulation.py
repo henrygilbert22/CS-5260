@@ -273,15 +273,24 @@ class Simulation:
         electronics_scalers = state.can_electronics_transform()
         
         for scaler in housing_scalers:
-            
             trans = HousingTransform(state, scaler)
-            new_state = state
+            new_state = state.housing_transform(scaler)
+            succesors.append([trans, new_state])
+            
+        for scaler in alloy_scalers:
+            trans = AlloyTransform(state, scaler)
+            new_state = state.alloys_transform(scaler)
+            succesors.append([trans, new_state])
         
-        
+        for scaler in electronics_scalers:
+            trans = ElectronicTransform(state, scaler)
+            new_state = state.electronics_transform(scaler)
+            succesors.append([trans, new_state])
+            
     
     def search(self):
         
-        self.frontier.push((self.country.state_value(), [(self.country)]))
+        self.frontier.push((self.country.state_value(), [[None, self.country]]))
         
         while not self.frontier.empty():
             
