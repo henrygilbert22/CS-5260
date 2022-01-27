@@ -380,8 +380,11 @@ def generate_new_states(scalers: list, transform_type: str, solution: Solution, 
             
 # With depth of 1, country 4 took 0.0017349720001220703 - 70 solutions
 # With depth of 2, country 4 took 0.6941020488739014 - 4900 solutions
-# Time scale = 400x longer for each depth
-# State space scale = 70x more states
+    # Time scale = 400x longer for each depth
+    # State space scale = 70x more states
+# Depth of 3, country 4 took 2756.87561917305 - 343000 solutions
+    # Time scale = 3900x longer
+    # State space scale = 70x
 
         
 def main():
