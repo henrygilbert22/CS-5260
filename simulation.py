@@ -298,8 +298,6 @@ class Simulation:
             new_solution = Solution(new_state.state_value(), solution.path + [trans, new_state])        # this is the trivial version
             self.frontier.push(new_solution)
         
-        
-            
     
     def search(self):
         
@@ -313,6 +311,8 @@ class Simulation:
             if len(solution.path) >= 3:
                 self.solutions.push(solution)
                 continue
+            
+            self.generate_succesors()
             
             
             
