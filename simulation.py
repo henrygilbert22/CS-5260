@@ -2,7 +2,9 @@ from dataclasses import dataclass
 import pandas as pd
 from rx import empty
 import copy
-
+import time
+import multiprocessing as mp
+from more_itertools import chunked
 
 # Schedule reward is differnce of inititial state value and final state value, this is the undiscounted reward
 # Discounted schedule reward: gamma^N * (Q_end(c_i, s_j) – Q_start(c_i, s_j))
@@ -31,7 +33,7 @@ class Country:
         
         resource_score =  self.metalic_alloys + self.timber + self.metalic_alloys
         developement_score = self.metalic_alloys + self.electronics + self.housing
-        waste_score = self.waste1 + self.waste2 + self.waste3
+        waste_score = self.metalic_waste + self.electronics_waste + self.housing_waste
         
         return round(resource_score + 2*developement_score - waste_score, 2)
     
@@ -40,18 +42,26 @@ class Country:
         if (self.population >= 5 and self.metalic_elm >= 1 
             and self.timber >= 5 and self.metalic_alloys >= 3): 
             
-            max_scaler = int(self.population / 5)
-            return [i+1 for i in range(max_scaler)]
+            scalers = []
+            scalers.append(int(self.population / 5))
+            scalers.append(int(self.metalic_elm / 1))
+            scalers.append(int(self.timber / 5))
+            scalers.append(int(self.metalic_alloys / 3))
+            
+            return [i+1 for i in range(min(scalers))]
         
         else:
             return []
     
     def can_alloys_transform(self):
         
-        if (self.population >= 1, self.metalic_elm >= 2):
+        if (self.population >= 1, self.metalic_elm >= 2):       
             
-            max_scaler = int(self.population / 1)
-            return [i+1 for i in range(max_scaler)]
+            scalers = []
+            scalers.append(int(self.population / 1))
+            scalers.append(int(self.metalic_elm / 2))
+            
+            return [i+1 for i in range(min(scalers))]
         
         else:
             return []
@@ -61,8 +71,12 @@ class Country:
         if (self.population >= 1 and self.metalic_elm >= 3
             and self.metalic_alloys >= 2):
             
-            max_scaler = int(self.population / 1)
-            return [i+1 for i in range(max_scaler)]
+            scalers = []
+            scalers.append(int(self.population / 1))
+            scalers.append(int(self.metalic_elm / 3))
+            scalers.append(int(self.metalic_alloys / 2))
+
+            return [i+1 for i in range(min(scalers))]
         
         else:
             return []
@@ -195,6 +209,7 @@ class Solution:
     expected_utility: float
     path: list
     
+
 class PriorityQueue:
     
     priority_queue: list[Solution]
@@ -219,11 +234,12 @@ class PriorityQueue:
             
             if self.priority_queue[i].expected_utility > self.priority_queue[max_value].expected_utility:       # Comparing value
                 max_value = i
-                
+        
         selected_item = self.priority_queue[max_value]
         del self.priority_queue[max_value]
         
         return selected_item
+     
                           
 class Simulation:
     
@@ -271,7 +287,7 @@ class Simulation:
         for index, row in df.iterrows(): 
            self.countries.append(Country(*row.values))
     
-    def generate_succesors(self, state: Country, solution: Solution):
+    def generate_succesors(self, state: Country, solution: Solution):           # Paralize this for extra credit
                 
         housing_scalers = state.can_housing_transform()
         alloy_scalers = state.can_alloys_transform()
@@ -281,50 +297,107 @@ class Simulation:
             
             trans = HousingTransform(state, scaler)
             new_state = state.housing_transform(scaler)
-            new_solution = Solution(new_state.state_value(), solution.path + [trans, new_state])        # this is the trivial version
+            new_solution = Solution(new_state.state_value(), solution.path + [[trans, new_state]])        
             self.frontier.push(new_solution)
             
         for scaler in alloy_scalers:
             
             trans = AlloyTransform(state, scaler)
             new_state = state.alloys_transform(scaler)
-            new_solution = Solution(new_state.state_value(), solution.path + [trans, new_state])        # this is the trivial version
+            new_solution = Solution(new_state.state_value(), solution.path + [[trans, new_state]])        
             self.frontier.push(new_solution)
         
         for scaler in electronics_scalers:
             
             trans = ElectronicTransform(state, scaler)
             new_state = state.electronics_transform(scaler)
-            new_solution = Solution(new_state.state_value(), solution.path + [trans, new_state])        # this is the trivial version
+            new_solution = Solution(new_state.state_value(), solution.path + [[trans, new_state]])        
             self.frontier.push(new_solution)
-        
     
+    def parallel_generate_succesors(self, state: Country, solution: Solution):
+        
+        housing_scalers = state.can_housing_transform()
+        alloy_scalers = state.can_alloys_transform()
+        electronics_scalers = state.can_electronics_transform()
+        
+        housing_chunks = []
+        for i in range(0, len(housing_scalers), int(len(housing_scalers)/3)):
+            housing_chunks.append(housing_scalers[i:i+int(len(housing_scalers)/3)])
+        
+        allow_chunks = []
+        for i in range(0, len(alloy_scalers), int(len(alloy_scalers)/3)):
+            allow_chunks.append(alloy_scalers[i:i+int(len(alloy_scalers)/3)])
+            
+        electronic_chunks = []
+        for i in range(0, len(electronics_scalers), int(len(electronics_scalers)/3)):
+            electronic_chunks.append(electronics_scalers[i:i+int(len(electronics_scalers)/3)])
+            
+        pool = mp.Pool
+        
     def search(self):
         
         initial_solution = Solution(self.country.state_value(), [[None, self.country]])
         self.frontier.push(initial_solution)
         
         while not self.frontier.empty():
-            
+                        
             solution = self.frontier.pop()
             
-            if len(solution.path) >= 3:
+            if len(solution.path) > self.depth:
                 self.solutions.push(solution)
                 continue
             
-            self.generate_succesors()
-            
-            
+            self.generate_succesors(self.country, solution)
             
 
-            
-            
-            
+def generate_new_states(scalers: list, transform_type: str, solution: Solution, shared_list: list, state: Country):
+
+        local_solutions = []
         
+        for scaler in scalers:
+             
+            if transform_type == 'housing':
+                trans = HousingTransform(state, scaler)
+                new_state = state.housing_transform(scaler)
+                new_solution = Solution(new_state.state_value(), solution.path + [[trans, new_state]])
+                local_solutions.append(new_solution)
+            
+            elif transform_type == 'alloy':
+                trans = AlloyTransform(state, scaler)
+                new_state = state.alloys_transform(scaler)
+                new_solution = Solution(new_state.state_value(), solution.path + [[trans, new_state]])
+                local_solutions.append(new_solution)
+            
+            elif transform_type == 'electronic':
+                trans = ElectronicTransform(state, scaler)
+                new_state = state.electronics_transform(scaler)
+                new_solution = Solution(new_state.state_value(), solution.path + [[trans, new_state]])
+                local_solutions.append(new_solution)
+                
+        
+        shared_list += local_solutions
+                 
+            
+# With depth of 1, country 4 took 0.0017349720001220703 - 70 solutions
+# With depth of 2, country 4 took 0.6941020488739014 - 4900 solutions
+# Time scale = 400x longer for each depth
+# State space scale = 70x more states
+
         
 def main():
     
-    s = Simulation('Example-Initial-Countries.xlsx', 'Example-Sample-Resources.xlsx', 0, 3)
+    s = Simulation('Example-Initial-Countries.xlsx', 'Example-Sample-Resources.xlsx', 4, 3)
+    
+    start = time.time()
+    s.search()
+    end = time.time()
+    
+    print(f"Took: {end-start}")
+    
+    print(len(s.solutions.priority_queue))
+    best_solution = s.solutions.pop()
+    print(best_solution)
+    
 
 if __name__ == '__main__':
     main()
