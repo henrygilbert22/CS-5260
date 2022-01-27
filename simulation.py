@@ -271,28 +271,32 @@ class Simulation:
         for index, row in df.iterrows(): 
            self.countries.append(Country(*row.values))
     
-    def generate_succesors(self, state: Country, path: list):
-        
-        succesors = []
-        
+    def generate_succesors(self, state: Country, solution: Solution):
+                
         housing_scalers = state.can_housing_transform()
         alloy_scalers = state.can_alloys_transform()
         electronics_scalers = state.can_electronics_transform()
         
         for scaler in housing_scalers:
+            
             trans = HousingTransform(state, scaler)
             new_state = state.housing_transform(scaler)
-            succesors.append([trans, new_state])
+            new_solution = Solution(new_state.state_value(), solution.path + [trans, new_state])        # this is the trivial version
+            self.frontier.push(new_solution)
             
         for scaler in alloy_scalers:
+            
             trans = AlloyTransform(state, scaler)
             new_state = state.alloys_transform(scaler)
-            succesors.append([trans, new_state])
+            new_solution = Solution(new_state.state_value(), solution.path + [trans, new_state])        # this is the trivial version
+            self.frontier.push(new_solution)
         
         for scaler in electronics_scalers:
+            
             trans = ElectronicTransform(state, scaler)
             new_state = state.electronics_transform(scaler)
-            succesors.append([trans, new_state])
+            new_solution = Solution(new_state.state_value(), solution.path + [trans, new_state])        # this is the trivial version
+            self.frontier.push(new_solution)
         
         
             
@@ -300,14 +304,14 @@ class Simulation:
     def search(self):
         
         initial_solution = Solution(self.country.state_value(), [[None, self.country]])
-        self.frontier.push(initial_solution)            # Maybe change how were storing data here, dataclass?
+        self.frontier.push(initial_solution)
         
         while not self.frontier.empty():
             
-            path = self.frontier.pop()
+            solution = self.frontier.pop()
             
-            if len(path[1]) >= 3:
-                self.solutions.push(path)
+            if len(solution.path) >= 3:
+                self.solutions.push(solution)
                 continue
             
             
