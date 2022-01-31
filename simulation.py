@@ -10,7 +10,7 @@ from more_itertools import chunked
 from priority_queue import PriorityQueue
 from transforms import HousingTransform, AlloyTransform, ElectronicTransform
 from country import Country, ResourceWeights
-
+from transfer import Transfer
 
 # Schedule reward is differnce of inititial state value and final state value, this is the undiscounted reward
 # Discounted schedule reward: gamma^N * (Q_end(c_i, s_j) – Q_start(c_i, s_j))
@@ -51,13 +51,14 @@ class Simulation:
         self.depth = depth
         self.gamma = gamma
         self.state_reduction = state_reduction
-        self.countries = []
+        self.countries = {}
         self.frontier = PriorityQueue()
         self.solutions = PriorityQueue()
         
         self.load()
         
         self.country = self.countries[country]
+        del self.countries[country]
     
     def load(self):
         
@@ -78,7 +79,7 @@ class Simulation:
         
         for index, row in df.iterrows(): 
             args = list(row.values) + [self.state_reduction]
-            self.countries.append(Country(*args))
+            self.countries[args[0]] = Country(*args)
     
     def calculate_reward(self, new_state: Country, solution: Solution):
         
@@ -86,37 +87,97 @@ class Simulation:
         og_quality = solution.path[0][1].state_value()
         
         # (Probobility * this) + (1-Probility)*C        C is negative function for cost of failure
-        return pow(self.gamma, len(solution.path)+1) * (curr_quality - og_quality)
+        return pow(self.gamma, len(solution.path)+1) * (curr_quality - og_quality)          # Need to take into account other states when were trading
         
         
     # We need to limit the queue size for smaller computations
     
-    def generate_succesors(self, state: Country, solution: Solution):           # Paralize this for extra credit
-                
-        housing_scalers = state.can_housing_transform()
-        alloy_scalers = state.can_alloys_transform()
-        electronics_scalers = state.can_electronics_transform()
+    def generate_transform_succesors(self, solution: Solution):
+        
+        curr_state = solution.path[-1][1]
+        
+        housing_scalers = curr_state.can_housing_transform()
+        alloy_scalers = curr_state.can_alloys_transform()
+        electronics_scalers = curr_state.can_electronics_transform()
         
         for scaler in housing_scalers:
             
-            trans = HousingTransform(state, scaler)
-            new_state = state.housing_transform(scaler)
-            new_solution = Solution(self.calculate_reward(new_state, solution), solution.path + [[trans, new_state]])        
+            trans = HousingTransform(curr_state, scaler)
+            new_state = curr_state.housing_transform(scaler)
+            new_solution = Solution(self.calculate_reward(new_state, solution), solution.path + [[trans, new_state, self.countries]])        
             self.frontier.push(new_solution)
             
         for scaler in alloy_scalers:
             
-            trans = AlloyTransform(state, scaler)
-            new_state = state.alloys_transform(scaler)
-            new_solution = Solution(self.calculate_reward(new_state, solution), solution.path + [[trans, new_state]])        
+            trans = AlloyTransform(curr_state, scaler)
+            new_state = curr_state.alloys_transform(scaler)
+            new_solution = Solution(self.calculate_reward(new_state, solution), solution.path + [[trans, new_state, self.countries]])        
             self.frontier.push(new_solution)
         
         for scaler in electronics_scalers:
             
-            trans = ElectronicTransform(state, scaler)
-            new_state = state.electronics_transform(scaler)
-            new_solution = Solution(self.calculate_reward(new_state, solution), solution.path + [[trans, new_state]])        
+            trans = ElectronicTransform(curr_state, scaler)
+            new_state = curr_state.electronics_transform(scaler)
+            new_solution = Solution(self.calculate_reward(new_state, solution), solution.path + [[trans, new_state, self.countries]])        
             self.frontier.push(new_solution)
+        
+    
+    def generate_transfer_succesors(self, solution: Solution):
+        
+        curr_state = solution.path[-1][1]
+        countries_elms = {}    
+            
+        curr_elms = {
+                'metalic_elm': curr_state.metalic_elm,
+                'timber': curr_state.timber,
+                'metalic_alloys': curr_state.metalic_alloys,
+                'electronics': curr_state.electronics,
+                'housing': curr_state.housing
+            }
+        
+        for c in self.countries:
+            countries_elms[c] = {
+                'metalic_elm': self.countries[c].metalic_elm,
+                'timber': self.countries[c].timber,
+                'metalic_alloys': self.countries[c].metalic_alloys,
+                'electronics': self.countries[c].electronics,
+                'housing': self.countries[c].housing
+            }
+        
+        for c in countries_elms:
+            for elm in countries_elms[c]:
+                
+                for curr_elm in curr_elms:
+                
+                    poss_trades = [i+1 for i in range(min(countries_elms[c][elm], curr_elms[curr_elm]))]
+                    num_buckets = round(len(poss_trades) / self.state_reduction)
+                    buckets = np.array_split(poss_trades, num_buckets)
+                
+                    amounts = []
+                    
+                    for bucket in buckets:
+                        if len(bucket) > 0:                  # Takes care if state_reduction is larger than starting buckets
+                            amounts.append(int(sum(bucket)/len(bucket)))
+                    
+                    for amount_1 in amounts:
+                        for amount_2 in amounts:
+                        
+                            trade = Transfer(elm, curr_elm, amount_1, amount_2, c, curr_state.name)
+                            new_curr_state = curr_state.make_trade(curr_elm, amount_2)
+                            self.countries[c] = self.countries[c].make_trade(elm, amount_1)
+                            new_solution = Solution(self.calculate_reward(new_curr_state, solution), solution.path + [[trade, new_curr_state, self.countries]]) 
+                            self.frontier.push(new_solution)
+                
+                
+                    
+                
+                
+            
+            
+        
+    def generate_succesors(self, solution: Solution):           # Paralize this for extra credit
+                
+        self.generate_transform_succesors(solution)
     
     def parallel_generate_succesors(self, state: Country, solution: Solution):
         
@@ -151,7 +212,7 @@ class Simulation:
                 self.solutions.push(solution)
                 continue
             
-            self.generate_succesors(solution.path[-1][1], solution)
+            self.generate_succesors(solution)
             
 
 

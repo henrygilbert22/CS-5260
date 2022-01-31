@@ -39,6 +39,21 @@ class Country:
         
         return round(resource_score + 3*developement_score - waste_score, 2)            # make this more complex at some point
     
+    def make_trade(self, resource: str, amount: int):
+        
+        new_state = copy.deepcopy(self)
+        
+        if resource == 'metalic_elm':
+            new_state.metalic_elm -= amount
+        elif resource == 'timber':
+            new_state.timber -= amount
+        elif resource == 'metalic_alloys':
+            new_state.metalic_alloys -= amount
+        elif resource == 'electronics':
+            new_state.electronics -= amount
+        elif resource == 'housing':
+            new_state.housing -= amount
+                
     def can_housing_transform(self):
                 
         if (self.population >= 5 and self.metalic_elm >= 1 
