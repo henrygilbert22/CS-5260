@@ -35,6 +35,20 @@ class HousingTransform:
         self.metalic_elm_output = state.metalic_elm - (1*scaler)
         self.timber_output = state.timber - (5*scaler)
         self.metalic_alloys_output = state.metalic_alloys - (3*scaler)
+    
+    def print(self):
+        
+        print("HOUSING TRANSFORM:")
+        print(f"     INPUTS:")
+        print(f"        population: {self.population_input}")
+        print(f"        metalic_elm: {self.metalic_elm_input}")
+        print(f"        timber: {self.timber_input}")
+        print(f"        metalic_alloy: {self.metalic_alloys_input}")
+        print(f"     OUTPUTS:")
+        print(f"        housing: {self.housing_output}")
+        print(f"        housing_waste: {self.housing_waste__output}")
+        print(f"        population: {self.population_output}")
+        print()
         
 
 @dataclass 
@@ -61,6 +75,18 @@ class AlloyTransform:
         self.metalic_alloy_output = 1 * scaler
         self.metalic_allow_waste_ouptut = 1 * scaler
         self.metalic_elm_output = state.metalic_elm - (2*scaler)
+    
+    def print(self):
+        
+        print("ALLOY TRANSFORM:")
+        print(f"     INPUTS:")
+        print(f"        population: {self.population_input}")
+        print(f"        metalic_elm: {self.metalic_elm_input}")
+        print(f"     OUTPUTS:")
+        print(f"        metalic_alloy: {self.metalic_alloy_output}")
+        print(f"        metalic_alloy_waste: {self.metalic_allow_waste_ouptut}")
+        print(f"        population: {self.population_output}")
+        print()
   
         
 @dataclass
@@ -91,3 +117,16 @@ class ElectronicTransform:
         self.electronics_waste_output = 1 * scaler
         self.metalic_elm_output = state.metalic_elm - (3*scaler)
         self.metalic_alloy_output = state.metalic_alloys - (2*scaler)
+    
+    def print(self):
+        
+        print("ELECTRONIC TRANSFORM:")
+        print(f"     INPUTS:")
+        print(f"        population: {self.population_input}")
+        print(f"        metalic_elm: {self.metalic_elm_input}")
+        print(f"        metalic_allot: {self.metalic_alloy_input}")
+        print(f"     OUTPUTS:")
+        print(f"        electronics: {self.electronics_output}")
+        print(f"        electronics_waste: {self.electronics_waste_output}")
+        print(f"        population: {self.population_output}")
+        print()

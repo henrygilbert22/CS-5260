@@ -11,14 +11,20 @@ class Solution:
 class PriorityQueue:
     
     priority_queue: list[Solution]
+    max_size: int
     
-    def __init__(self):
+    def __init__(self, max_size: int):
         
         self.priority_queue = []
+        self.max_size = max_size
   
     def push(self, data: tuple) -> None:
         
         self.priority_queue.append(data)
+        
+        if len(self.priority_queue) > self.max_size:
+            self.priority_queue.sort(key=lambda x: x.expected_utility)
+            del self.priority_queue[0]
     
     def empty(self):
         
@@ -26,15 +32,10 @@ class PriorityQueue:
     
     def pop(self) -> object:
         
-        max_value = 0
+        self.priority_queue.sort(key=lambda x: x.expected_utility)
+        max_item = self.priority_queue[-1]
+        del self.priority_queue[-1]
         
-        for i in range(len(self.priority_queue)):
-            
-            if self.priority_queue[i].expected_utility > self.priority_queue[max_value].expected_utility:       # Comparing value
-                max_value = i
+        return max_item
         
-        selected_item = self.priority_queue[max_value]
-        del self.priority_queue[max_value]
-        
-        return selected_item
      

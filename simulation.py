@@ -35,19 +35,21 @@ class Simulation:
     solutions: PriorityQueue
     
     depth: int
+    max_frontier_size: int
     gamma: float
     state_reduction: int
     
-    def __init__(self, countries_file_name: str, weights_file_name: str, country: int, depth: int, gamma: float, state_reduction: int) -> None:
+    def __init__(self, countries_file_name: str, weights_file_name: str, country: int, depth: int, gamma: float, state_reduction: int, max_frontier_size: int) -> None:
         
         self.countries_file_name = countries_file_name
         self.weights_file_name = weights_file_name
         self.depth = depth
+        self.max_frontier_size = max_frontier_size
         self.gamma = gamma
         self.state_reduction = state_reduction
         self.countries = {}
-        self.frontier = PriorityQueue()
-        self.solutions = PriorityQueue()
+        self.frontier = PriorityQueue(max_frontier_size)
+        self.solutions = PriorityQueue(10)
         
         self.load()
         
@@ -247,7 +249,7 @@ def generate_new_states(scalers: list, transform_type: str, solution: Solution, 
         
 def main():
     
-    s = Simulation('Example-Initial-Countries.xlsx', 'Example-Sample-Resources.xlsx', 'Erewhon', 1, 0.8, 2)
+    s = Simulation('Example-Initial-Countries.xlsx', 'Example-Sample-Resources.xlsx', 'Erewhon', 1, 0.8, 100, 10)
     
     start = time.time()
     s.search()
