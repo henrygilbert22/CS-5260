@@ -1,4 +1,12 @@
-from simulation import Solution
+from dataclasses import dataclass
+
+
+@dataclass
+class Solution:
+    
+    expected_utility: float
+    path: list
+    
 
 class PriorityQueue:
     

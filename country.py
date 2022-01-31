@@ -53,6 +53,8 @@ class Country:
             new_state.electronics -= amount
         elif resource == 'housing':
             new_state.housing -= amount
+        
+        return new_state
                 
     def can_housing_transform(self):
                 

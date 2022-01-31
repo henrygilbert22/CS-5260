@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from math import ceil
 import pandas as pd
 from rx import empty
 import copy
@@ -7,7 +8,7 @@ import multiprocessing as mp
 import numpy as np
 from more_itertools import chunked
 
-from priority_queue import PriorityQueue
+from priority_queue import PriorityQueue, Solution
 from transforms import HousingTransform, AlloyTransform, ElectronicTransform
 from country import Country, ResourceWeights
 from transfer import Transfer
@@ -20,14 +21,7 @@ from transfer import Transfer
     
 # Search algo can not be recursive
 
-
-@dataclass
-class Solution:
-    
-    expected_utility: float
-    path: list
-    
-                          
+                       
 class Simulation:
     
     countries: list[Country]
@@ -125,6 +119,7 @@ class Simulation:
     def generate_transfer_succesors(self, solution: Solution):
         
         curr_state = solution.path[-1][1]
+        curr_countries = solution.path[-1][2]
         countries_elms = {}    
             
         curr_elms = {
@@ -135,26 +130,28 @@ class Simulation:
                 'housing': curr_state.housing
             }
         
-        for c in self.countries:
+        for c in curr_countries:
             countries_elms[c] = {
-                'metalic_elm': self.countries[c].metalic_elm,
-                'timber': self.countries[c].timber,
-                'metalic_alloys': self.countries[c].metalic_alloys,
-                'electronics': self.countries[c].electronics,
-                'housing': self.countries[c].housing
+                'metalic_elm': curr_countries[c].metalic_elm,
+                'timber': curr_countries[c].timber,
+                'metalic_alloys': curr_countries[c].metalic_alloys,
+                'electronics': curr_countries[c].electronics,
+                'housing': curr_countries[c].housing
             }
         
         for c in countries_elms:
             for elm in countries_elms[c]:
                 
                 for curr_elm in curr_elms:
-                
-                    poss_trades = [i+1 for i in range(min(countries_elms[c][elm], curr_elms[curr_elm]))]
-                    num_buckets = round(len(poss_trades) / self.state_reduction)
-                    buckets = np.array_split(poss_trades, num_buckets)
-                
-                    amounts = []
                     
+                    amounts = []
+                    poss_trades = [i+1 for i in range(min(countries_elms[c][elm], curr_elms[curr_elm]))]  
+                    num_buckets = ceil(len(poss_trades) / self.state_reduction)                         # To push 0.1 to 1 as min is 1 bucket
+                    
+                    if num_buckets < 0 or len(poss_trades) == 0:
+                        continue
+                    
+                    buckets = np.array_split(poss_trades, num_buckets)
                     for bucket in buckets:
                         if len(bucket) > 0:                  # Takes care if state_reduction is larger than starting buckets
                             amounts.append(int(sum(bucket)/len(bucket)))
@@ -164,20 +161,15 @@ class Simulation:
                         
                             trade = Transfer(elm, curr_elm, amount_1, amount_2, c, curr_state.name)
                             new_curr_state = curr_state.make_trade(curr_elm, amount_2)
-                            self.countries[c] = self.countries[c].make_trade(elm, amount_1)
-                            new_solution = Solution(self.calculate_reward(new_curr_state, solution), solution.path + [[trade, new_curr_state, self.countries]]) 
+                            new_countries = copy.deepcopy(curr_countries)
+                            new_countries[c] = curr_countries[c].make_trade(elm, amount_1)
+                            new_solution = Solution(self.calculate_reward(new_curr_state, solution), solution.path + [[trade, new_curr_state, new_countries]]) 
                             self.frontier.push(new_solution)
                 
-                
-                    
-                
-                
-            
-            
-        
     def generate_succesors(self, solution: Solution):           # Paralize this for extra credit
                 
         self.generate_transform_succesors(solution)
+        self.generate_transfer_succesors(solution)
     
     def parallel_generate_succesors(self, state: Country, solution: Solution):
         
@@ -201,7 +193,7 @@ class Simulation:
         
     def search(self):
         
-        initial_solution = Solution(self.country.state_value(), [[None, self.country]])
+        initial_solution = Solution(self.country.state_value(), [[None, self.country, self.countries]])
         self.frontier.push(initial_solution)
         
         while not self.frontier.empty():
@@ -255,7 +247,7 @@ def generate_new_states(scalers: list, transform_type: str, solution: Solution, 
         
 def main():
     
-    s = Simulation('Example-Initial-Countries.xlsx', 'Example-Sample-Resources.xlsx', 4, 1, 0.8, 2)
+    s = Simulation('Example-Initial-Countries.xlsx', 'Example-Sample-Resources.xlsx', 'Erewhon', 1, 0.8, 2)
     
     start = time.time()
     s.search()
