@@ -69,8 +69,11 @@ class Country:
             
             poss_scalers = [i+1 for i in range(min(scalers))]
             num_buckets = round(len(poss_scalers) / self.state_reduction)
-            buckets = np.array_split(poss_scalers, num_buckets)
             
+            if num_buckets < 1 or len(poss_scalers) == 0:
+                return poss_scalers
+            
+            buckets = np.array_split(poss_scalers, num_buckets)    
             final_scalers = []
             
             for bucket in buckets:
@@ -92,8 +95,11 @@ class Country:
             
             poss_scalers = [i+1 for i in range(min(scalers))]
             num_buckets = round(len(poss_scalers) / self.state_reduction)
-            buckets = np.array_split(poss_scalers, num_buckets)
             
+            if num_buckets < 1 or len(poss_scalers) == 0:
+                return poss_scalers
+            
+            buckets = np.array_split(poss_scalers, num_buckets)
             final_scalers = []
             
             for bucket in buckets:
@@ -117,8 +123,11 @@ class Country:
 
             poss_scalers = [i+1 for i in range(min(scalers))]
             num_buckets = round(len(poss_scalers) / self.state_reduction)
-            buckets = np.array_split(poss_scalers, num_buckets)
             
+            if num_buckets < 1 or len(poss_scalers) == 0:
+                return poss_scalers
+            
+            buckets = np.array_split(poss_scalers, num_buckets)
             final_scalers = []
             
             for bucket in buckets:

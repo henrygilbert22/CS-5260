@@ -12,3 +12,11 @@ class Transfer:
     c_1_name: str
     c_2_name: str
     
+    def print(self):
+        
+        print("TRANSFER:")
+        print(f"    {self.c_1_name} - {self.c_2_name}")
+        print(f"    {self.resource_1_name} - {self.resource_2_name}")
+        print(f"    {self.resource_1_amount} - {self.resource_2_amount}")
+        print()
+        

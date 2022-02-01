@@ -49,7 +49,7 @@ class Simulation:
         self.state_reduction = state_reduction
         self.countries = {}
         self.frontier = PriorityQueue(max_frontier_size)
-        self.solutions = PriorityQueue(10)
+        self.solutions = PriorityQueue(3)
         
         self.load()
         
@@ -83,7 +83,7 @@ class Simulation:
         og_quality = solution.path[0][1].state_value()
         
         # (Probobility * this) + (1-Probility)*C        C is negative function for cost of failure
-        return pow(self.gamma, len(solution.path)+1) * (curr_quality - og_quality)          # Need to take into account other states when were trading
+        return round(pow(self.gamma, len(solution.path)+1) * (curr_quality - og_quality),3)        # Need to take into account other states when were trading
         
         
     # We need to limit the queue size for smaller computations
@@ -146,11 +146,43 @@ class Simulation:
                 
                 for curr_elm in curr_elms:
                     
+                    
+                    other_elm_scale = 1 / self.r_weights['c']               #0.2 - 5 are needed to be $1
+                    self_elm_scale = 1 / self.r_weights[curr_state.name]    #0.5 - 2 are needed to be $1
+                    max_amount = min(int(countries_elms[c][elm]/other_elm_scale), int(curr_elms[curr_elm]/self_elm_scale))      # 500/5 = 100, 100 / 0.5 = 200, max swap is 100 (equivalent value)
+                    
+                    poss_trades = [i+1 for i in range(max_amount)]
+                    num_buckets = ceil(len(poss_trades) / self.state_reduction)
+                    
+                    if num_buckets < 1 or len(poss_trades) == 0:
+                        continue
+                    
+                    amounts = []
+                    buckets = np.array_split(poss_trades, num_buckets)
+                    for bucket in buckets:
+                        if len(bucket) > 0:                  # Takes care if state_reduction is larger than starting buckets
+                            amounts.append(int(sum(bucket)/len(bucket)))
+                    
+                    
+                    for amount in amounts:
+                        
+                        other_elm_amount = ceil(amount / other_elm_scale)
+                        self_elm_amount = ceil(amount / self_elm_scale)
+                        
+                        trade = Transfer(elm, curr_elm, other_elm_amount, self_elm_amount, c, curr_state.name)
+                        new_curr_state = curr_state.make_trade(curr_elm, self_elm_amount)
+                        new_countries = copy.deepcopy(curr_countries)
+                        new_countries[c] = curr_countries[c].make_trade(elm, other_elm_amount)
+                        new_solution = Solution(self.calculate_reward(new_curr_state, solution), solution.path + [[trade, new_curr_state, new_countries]]) 
+                        self.frontier.push(new_solution)
+                        
+     
+                    """
                     amounts = []
                     poss_trades = [i+1 for i in range(min(countries_elms[c][elm], curr_elms[curr_elm]))]  
                     num_buckets = ceil(len(poss_trades) / self.state_reduction)                         # To push 0.1 to 1 as min is 1 bucket
                     
-                    if num_buckets < 0 or len(poss_trades) == 0:
+                    if num_buckets < 1 or len(poss_trades) == 0:
                         continue
                     
                     buckets = np.array_split(poss_trades, num_buckets)
@@ -167,11 +199,15 @@ class Simulation:
                             new_countries[c] = curr_countries[c].make_trade(elm, amount_1)
                             new_solution = Solution(self.calculate_reward(new_curr_state, solution), solution.path + [[trade, new_curr_state, new_countries]]) 
                             self.frontier.push(new_solution)
+                    
+                    """
+                    
+                    
                 
     def generate_succesors(self, solution: Solution):           # Paralize this for extra credit
                 
         self.generate_transform_succesors(solution)
-        self.generate_transfer_succesors(solution)
+        #self.generate_transfer_succesors(solution)
     
     def parallel_generate_succesors(self, state: Country, solution: Solution):
         
@@ -246,10 +282,10 @@ def generate_new_states(scalers: list, transform_type: str, solution: Solution, 
     # Time scale = 3900x longer
     # State space scale = 70x
 
-        
+
 def main():
     
-    s = Simulation('Example-Initial-Countries.xlsx', 'Example-Sample-Resources.xlsx', 'Erewhon', 1, 0.8, 100, 10)
+    s = Simulation('Example-Initial-Countries.xlsx', 'Example-Sample-Resources.xlsx', 'Erewhon', 3, 0.8, 2, 1000000)
     
     start = time.time()
     s.search()
@@ -257,9 +293,9 @@ def main():
     
     print(f"Took: {end-start}")
     
-    print(len(s.solutions.priority_queue))
-    best_solution = s.solutions.pop()
-    print(best_solution)
+    best_solution = s.solutions.queue[-1]
+    best_solution.print()
+ 
     
 
 if __name__ == '__main__':
