@@ -7,6 +7,7 @@ import time
 import multiprocessing as mp
 import numpy as np
 from more_itertools import chunked
+import math
 
 from priority_queue import PriorityQueue, Solution
 from transforms import HousingTransform, AlloyTransform, ElectronicTransform
@@ -63,9 +64,8 @@ class Simulation:
     
     def load_weights(self, file_name: str):
         
-        df = pd.read_excel(file_name)
+        df = pd.read_csv(file_name)
         args = pd.Series(df.Weight.values).to_list()
-        
         self.r_weights = ResourceWeights(*args)        
            
            
@@ -77,15 +77,29 @@ class Simulation:
             args = list(row.values) + [self.state_reduction]
             self.countries[args[0]] = Country(*args)
     
-    def calculate_reward(self, new_state: Country, solution: Solution):
+    def calculate_reward(self, solution: Solution):
         
+        new_state = solution.path[-1][1]
         curr_quality = new_state.state_value()
         og_quality = solution.path[0][1].state_value()
         
-        # (Probobility * this) + (1-Probility)*C        C is negative function for cost of failure
-        return round(pow(self.gamma, len(solution.path)+1) * (curr_quality - og_quality),3)        # Need to take into account other states when were trading
+        other_country_probobility = []
+        for step in solution.path:
+            
+            if type(step[0]) is Transfer:
+                other_c_utility = self.countries[step[0].c_1_name].state_value()
+                other_country_probobility.append(math.log(other_c_utility))
         
+        if other_country_probobility:
+            other_c_prob = sum(other_country_probobility) / len(other_country_probobility)
+        else:
+            other_c_prob = 1
+            
+        discounted_reward =  round(pow(self.gamma, len(solution.path)+1) * (curr_quality - og_quality), 3)        # Need to take into account other states when were trading
+        expected_utility = (other_c_prob * discounted_reward) + ((1 - other_c_prob) * 0.1)      # 0.1 encourages it to take risks and not give too much weight to the probobility
         
+        return expected_utility
+    
     # We need to limit the queue size for smaller computations
     
     def generate_transform_succesors(self, solution: Solution):
@@ -100,21 +114,27 @@ class Simulation:
             
             trans = HousingTransform(curr_state, scaler)
             new_state = curr_state.housing_transform(scaler)
-            new_solution = Solution(self.calculate_reward(new_state, solution), solution.path + [[trans, new_state, self.countries]])        
+            new_solution = copy.deepcopy(solution)
+            new_solution.path += [[trans, new_state, self.countries]]
+            new_solution.priority = self.calculate_reward(new_solution)       
             self.frontier.push(new_solution)
             
         for scaler in alloy_scalers:
             
             trans = AlloyTransform(curr_state, scaler)
             new_state = curr_state.alloys_transform(scaler)
-            new_solution = Solution(self.calculate_reward(new_state, solution), solution.path + [[trans, new_state, self.countries]])        
+            new_solution = copy.deepcopy(solution)
+            new_solution.path += [[trans, new_state, self.countries]]
+            new_solution.priority = self.calculate_reward(new_solution)       
             self.frontier.push(new_solution)
         
         for scaler in electronics_scalers:
             
             trans = ElectronicTransform(curr_state, scaler)
             new_state = curr_state.electronics_transform(scaler)
-            new_solution = Solution(self.calculate_reward(new_state, solution), solution.path + [[trans, new_state, self.countries]])        
+            new_solution = copy.deepcopy(solution)
+            new_solution.path += [[trans, new_state, self.countries]]
+            new_solution.priority = self.calculate_reward(new_solution)       
             self.frontier.push(new_solution)
         
     
@@ -146,9 +166,8 @@ class Simulation:
                 
                 for curr_elm in curr_elms:
                     
-                    
-                    other_elm_scale = 1 / self.r_weights['c']               #0.2 - 5 are needed to be $1
-                    self_elm_scale = 1 / self.r_weights[curr_state.name]    #0.5 - 2 are needed to be $1
+                    other_elm_scale = 1 / self.r_weights[elm]               #0.2 - 5 are needed to be $1
+                    self_elm_scale = 1 / self.r_weights[curr_elm]    #0.5 - 2 are needed to be $1
                     max_amount = min(int(countries_elms[c][elm]/other_elm_scale), int(curr_elms[curr_elm]/self_elm_scale))      # 500/5 = 100, 100 / 0.5 = 200, max swap is 100 (equivalent value)
                     
                     poss_trades = [i+1 for i in range(max_amount)]
@@ -163,7 +182,6 @@ class Simulation:
                         if len(bucket) > 0:                  # Takes care if state_reduction is larger than starting buckets
                             amounts.append(int(sum(bucket)/len(bucket)))
                     
-                    
                     for amount in amounts:
                         
                         other_elm_amount = ceil(amount / other_elm_scale)
@@ -173,7 +191,9 @@ class Simulation:
                         new_curr_state = curr_state.make_trade(curr_elm, self_elm_amount)
                         new_countries = copy.deepcopy(curr_countries)
                         new_countries[c] = curr_countries[c].make_trade(elm, other_elm_amount)
-                        new_solution = Solution(self.calculate_reward(new_curr_state, solution), solution.path + [[trade, new_curr_state, new_countries]]) 
+                        new_solution = copy.deepcopy(solution)
+                        new_solution.path += [[trade, new_curr_state, new_countries]]
+                        new_solution.priority = self.calculate_reward(new_solution)       
                         self.frontier.push(new_solution)
                         
      
@@ -207,7 +227,7 @@ class Simulation:
     def generate_succesors(self, solution: Solution):           # Paralize this for extra credit
                 
         self.generate_transform_succesors(solution)
-        #self.generate_transfer_succesors(solution)
+        self.generate_transfer_succesors(solution)
     
     def parallel_generate_succesors(self, state: Country, solution: Solution):
         
@@ -285,7 +305,7 @@ def generate_new_states(scalers: list, transform_type: str, solution: Solution, 
 
 def main():
     
-    s = Simulation('Example-Initial-Countries.xlsx', 'Example-Sample-Resources.xlsx', 'Erewhon', 3, 0.8, 2, 1000000)
+    s = Simulation('Example-Initial-Countries.xlsx', 'resources.csv', 'Erewhon', 2, 0.8, 10, 1000)
     
     start = time.time()
     s.search()

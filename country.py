@@ -13,7 +13,10 @@ class ResourceWeights:
     housing: int
     metalic_waste: float = 0.0     
     electronics_waste: float = 0.0     
-    housing_waste: float = 0.0     
+    housing_waste: float = 0.0    
+    
+    def __getitem__(self, item):
+        return getattr(self, item) 
     
 @dataclass
 class Country:
