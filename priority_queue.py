@@ -42,6 +42,12 @@ class PriorityQueue:
         
         heapq.heappush(self.queue, item)
     
+    def final_step(self, depth: int):
+        
+        
+        #return len(self.queue[0].path) == depth
+        return False
+        
     def pop(self):
         
         return heapq.heappop(self.queue)
