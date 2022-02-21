@@ -13,6 +13,14 @@ class Transfer:
     c_2_name: str
     
     def print(self):
+        """Prints the given transfer
+        
+        Parameters:
+            None
+            
+        Returns:
+            None
+        """
         
         print("TRANSFER:")
         print(f"    {self.c_1_name} - {self.c_2_name}")

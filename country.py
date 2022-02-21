@@ -16,6 +16,17 @@ class ResourceWeights:
     housing_waste: float = 0.0    
     
     def __getitem__(self, item):
+        """Base level function to treat
+        class of resource weights like a dictionary.
+        This helps make the access code much cleaner in the
+        simulation class
+
+        Args:
+            item (_type_): Attribute to access
+
+        Returns:
+            _type_: Attribute
+        """
         return getattr(self, item) 
     
 @dataclass
@@ -35,6 +46,12 @@ class Country:
     housing_waste: int = 0
         
     def state_value(self) -> float:
+        """Returns the base value of a state. Calculated
+        as a weighted sum of the resources, developement and waste
+
+        Returns:
+            float: Base state value
+        """
         
         resource_score =  self.metalic_alloys + self.timber + self.metalic_alloys
         developement_score = self.metalic_alloys + self.electronics + self.housing
@@ -43,6 +60,16 @@ class Country:
         return round(resource_score + 3*developement_score - waste_score, 2)            # make this more complex at some point
     
     def make_trade(self, resource: str, amount: int):
+        """Function to subtract resource for any
+        given trade
+
+        Args:
+            resource (str): Resource to manipulate
+            amount (int): Amount to subtract 
+
+        Returns:
+            Country: New country
+        """
         
         new_state = copy.deepcopy(self)
         
@@ -60,6 +87,15 @@ class Country:
         return new_state
                 
     def can_housing_transform(self):
+        """Function to calculate possible scalers for a
+        housing transform given the current state of the country.
+
+        Parameters:
+            None
+            
+        Returns:
+           list: List of potential scalers for a housing transform.
+        """
                 
         if (self.population >= 5 and self.metalic_elm >= 1 
             and self.timber >= 5 and self.metalic_alloys >= 3): 
@@ -89,6 +125,15 @@ class Country:
             return []
     
     def can_alloys_transform(self):
+        """Function to calculate possible scalers for a
+        alloy transform given the current state of the country.
+
+        Parameters:
+            None
+            
+        Returns:
+           list: List of potential scalers for a alloy transform.
+        """
         
         if (self.population >= 1, self.metalic_elm >= 2):       
             
@@ -115,6 +160,15 @@ class Country:
             return []
     
     def can_electronics_transform(self):
+        """Function to calculate possible scalers for a
+        electronics transform given the current state of the country.
+
+        Parameters:
+            None
+            
+        Returns:
+           list: List of potential scalers for a electronics transform.
+        """
         
         if (self.population >= 1 and self.metalic_elm >= 3
             and self.metalic_alloys >= 2):
@@ -143,6 +197,15 @@ class Country:
             return []
         
     def housing_transform(self, scaler: int):
+        """ Performs the given housing transformation.
+        The amount is dictated by the passed in scaler.
+
+        Parameters:
+            scaler (int): Scaler amount for the transformation
+
+        Returns:
+            Country: New country after given transformation
+        """
             
         new_state = copy.deepcopy(self)
         
@@ -158,6 +221,15 @@ class Country:
         return new_state
     
     def alloys_transform(self, scaler: int):
+        """ Performs the given alloys transformation.
+        The amount is dictated by the passed in scaler.
+
+        Parameters:
+            scaler (int): Scaler amount for the transformation
+
+        Returns:
+            Country: New country after given transformation
+        """
   
         new_state = copy.deepcopy(self)
         
@@ -171,6 +243,15 @@ class Country:
         return new_state
             
     def electronics_transform(self, scaler: int):
+        """ Performs the given electronics transformation.
+        The amount is dictated by the passed in scaler.
+
+        Parameters:
+            scaler (int): Scaler amount for the transformation
+
+        Returns:
+            Country: New country after given transformation
+        """
 
         new_state = copy.deepcopy(self)
         

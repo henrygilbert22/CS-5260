@@ -21,6 +21,16 @@ class HousingTransform:
     
     
     def __init__(self, state: Country, scaler: int) -> None:
+        """Given the state and the scaler, captures origional
+        value and sets the new resource values of the state
+
+        Parameters:
+            state (Country): Current state to transform
+            scaler (int): Scaler for transformations
+            
+        Returns:
+            None
+        """
         
         self.scaler = scaler
           
@@ -37,6 +47,14 @@ class HousingTransform:
         self.metalic_alloys_output = state.metalic_alloys - (3*scaler)
     
     def print(self):
+        """Pretty prints the transformation
+        
+        Parameters: 
+            None
+            
+        Returns:
+            None
+        """
         
         print("HOUSING TRANSFORM:")
         print(f"     INPUTS:")
@@ -65,6 +83,16 @@ class AlloyTransform:
     metalic_elm_output: int
     
     def __init__(self, state: Country, scaler: int) -> None:
+        """Given the state and the scaler, captures origional
+        value and sets the new resource values of the state
+
+        Parameters:
+            state (Country): Current state to transform
+            scaler (int): Scaler for transformations
+            
+        Returns:
+            None
+        """
         
         self.scaler = scaler
         
@@ -77,6 +105,14 @@ class AlloyTransform:
         self.metalic_elm_output = state.metalic_elm - (2*scaler)
     
     def print(self):
+        """Pretty prints the transformation
+        
+        Parameters: 
+            None
+            
+        Returns:
+            None
+        """
         
         print("ALLOY TRANSFORM:")
         print(f"     INPUTS:")
@@ -105,6 +141,16 @@ class ElectronicTransform:
     metalic_alloy_output: int
     
     def __init__(self, state: Country, scaler: int) -> None:
+        """Given the state and the scaler, captures origional
+        value and sets the new resource values of the state
+
+        Parameters:
+            state (Country): Current state to transform
+            scaler (int): Scaler for transformations
+            
+        Returns:
+            None
+        """
         
         self.scaler = scaler
              
@@ -119,6 +165,14 @@ class ElectronicTransform:
         self.metalic_alloy_output = state.metalic_alloys - (2*scaler)
     
     def print(self):
+        """Pretty prints the transformation
+        
+        Parameters: 
+            None
+            
+        Returns:
+            None
+        """
         
         print("ELECTRONIC TRANSFORM:")
         print(f"     INPUTS:")
