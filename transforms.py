@@ -67,8 +67,7 @@ class HousingTransform:
         print(f"        housing_waste: {self.housing_waste__output}")
         print(f"        population: {self.population_output}")
         print()
-        
-
+    
 @dataclass 
 class AlloyTransform:
     
@@ -123,7 +122,6 @@ class AlloyTransform:
         print(f"        metalic_alloy_waste: {self.metalic_allow_waste_ouptut}")
         print(f"        population: {self.population_output}")
         print()
-  
         
 @dataclass
 class ElectronicTransform:
@@ -183,4 +181,118 @@ class ElectronicTransform:
         print(f"        electronics: {self.electronics_output}")
         print(f"        electronics_waste: {self.electronics_waste_output}")
         print(f"        population: {self.population_output}")
+        print()
+
+@dataclass
+class FoodTransform:
+    
+    scaler: int
+    
+    water_input: int
+    
+    water_output: int
+    food_output: int
+    food_waste_output: int
+    
+    def __init__(self, state: Country, scaler: int) -> None:
+        """Given the state and the scaler, captures origional
+        value and sets the new resource values of the state
+
+        Parameters:
+            state (Country): Current state to transform
+            scaler (int): Scaler for transformations
+            
+        Returns:
+            None
+        """
+        
+        self.scaler = scaler
+             
+        self.water_input = state.water
+        
+        self.water_output = self.water_input - (10*scaler)
+        self.food_output = 1 * scaler
+        self.food_waste_output = int(0.5 * scaler)
+       
+    def print(self):
+        """Pretty prints the transformation
+        
+        Parameters: 
+            None
+            
+        Returns:
+            None
+        """
+        
+        print("FOOD TRANSFORM:")
+        print(f"     INPUTS:")
+        print(f"        water: {self.water_input}")
+        print(f"     OUTPUTS:")
+        print(f"        water: {self.water_output}")
+        print(f"        food: {self.food_output}")
+        print(f"        food_waste: {self.food_waste_output}")
+        print()
+
+@dataclass
+class FarmTransform:
+    
+    scaler: int
+    
+    timber_input: int
+    available_land_input: int
+    water_input: int
+    
+    timber_output: int
+    available_land_output: int
+    water_output: int
+    farm_output: int
+    farm_waste_output: int
+    
+    def __init__(self, state: Country, scaler: int) -> None:
+        """Given the state and the scaler, captures origional
+        value and sets the new resource values of the state
+
+        Parameters:
+            state (Country): Current state to transform
+            scaler (int): Scaler for transformations
+            
+        Returns:
+            None
+        """
+        
+        self.scaler = scaler
+             
+        self.water_input = state.water
+        self.timber_input = state.timber
+        self.available_land_input = state.available_land
+        
+        self.water_output = self.water_input - (10*scaler)
+        self.timber_output = self.timber_input - (5*scaler)
+        self.available_land_output = self.available_land_input - (10*scaler)
+        
+        self.farm_output = 5*scaler
+        self.farm_waste_output = 1*scaler
+        
+       
+    def print(self):
+        """Pretty prints the transformation
+        
+        Parameters: 
+            None
+            
+        Returns:
+            None
+        """
+        
+        print("FARM TRANSFORM:")
+        print(f"     INPUTS:")
+        print(f"        water: {self.water_input}")
+        print(f"        timber: {self.timber_input}")
+        print(f"        available_land: {self.available_land_input}")
+        print(f"     OUTPUTS:")
+        print(f"        water: {self.water_output}")
+        print(f"        timber: {self.timber_output}")
+        print(f"        available_land: {self.available_land_output}")
+        print(f"        farm: {self.farm_output}")
+        print(f"        farm_waste: {self.farm_waste_output}")
         print()
