@@ -97,7 +97,7 @@ class Country:
             (self.weights['food_waste'] * self.food_waste)
             )
         
-        return round(resource_score + 3*developement_score - waste_score, 2)            # make this more complex at some point
+        return round(resource_score + 10*developement_score - waste_score, 2)            # make this more complex at some point
     
     def make_trade(self, resource: str, amount: int):
         """Function to subtract resource for any
@@ -153,6 +153,9 @@ class Country:
             scalers.append(int(self.available_land / 10))
             scalers.append(int(self.water / 10))
             
+            if self.state_reduction == -1:
+                return [min(scalers)]
+                
             poss_scalers = [i+1 for i in range(min(scalers))]
             num_buckets = round(len(poss_scalers) / self.state_reduction)
             
@@ -182,11 +185,14 @@ class Country:
            list: List of potential scalers for a housing transform.
         """
                 
-        if (self.available_land >=10 and self.water >= 10): 
+        if (self.farm >=5 and self.water >= 10): 
             
             scalers = []
-            scalers.append(int(self.available_land / 10))
+            scalers.append(int(self.farm / 5))
             scalers.append(int(self.water / 10))
+            
+            if self.state_reduction == -1:
+                return [min(scalers)]
             
             poss_scalers = [i+1 for i in range(min(scalers))]
             num_buckets = round(len(poss_scalers) / self.state_reduction)
@@ -226,6 +232,9 @@ class Country:
             scalers.append(int(self.timber / 5))
             scalers.append(int(self.metalic_alloys / 3))
             
+            if self.state_reduction == -1:
+                return [min(scalers)]
+            
             poss_scalers = [i+1 for i in range(min(scalers))]
             num_buckets = round(len(poss_scalers) / self.state_reduction)
             
@@ -260,6 +269,9 @@ class Country:
             scalers = []
             scalers.append(int(self.population / 1))
             scalers.append(int(self.metalic_elm / 2))
+            
+            if self.state_reduction == -1:
+                return [min(scalers)]
             
             poss_scalers = [i+1 for i in range(min(scalers))]
             num_buckets = round(len(poss_scalers) / self.state_reduction)
@@ -298,6 +310,9 @@ class Country:
             scalers.append(int(self.metalic_elm / 3))
             scalers.append(int(self.metalic_alloys / 2))
 
+            if self.state_reduction == -1:
+                return [min(scalers)]
+            
             poss_scalers = [i+1 for i in range(min(scalers))]
             num_buckets = round(len(poss_scalers) / self.state_reduction)
             
@@ -385,6 +400,26 @@ class Country:
         
         return new_state
 
+    def food_transform(self, scaler: int):
+        """ Performs the given electronics transformation.
+        The amount is dictated by the passed in scaler.
+
+        Parameters:
+            scaler (int): Scaler amount for the transformation
+
+        Returns:
+            Country: New country after given transformation
+        """
+
+        new_state = copy.deepcopy(self)
+        
+        new_state.water -= 10*scaler
+        
+        new_state.food += 1*scaler
+        new_state.food_waste += int(0.5*scaler)
+        
+        return new_state
+    
     def farm_transform(self, scaler: int):
         """ Performs the given electronics transformation.
         The amount is dictated by the passed in scaler.
@@ -402,27 +437,8 @@ class Country:
         new_state.available_land -= 10*scaler
         new_state.water -= 10*scaler
         
-        self.farm += 5*scaler
-        self.farm_waste += 1*scaler
+        new_state.farm += 5*scaler
+        new_state.farm_waste += 1*scaler
         
         return new_state
 
-    def food_transform(self, scaler: int):
-        """ Performs the given electronics transformation.
-        The amount is dictated by the passed in scaler.
-
-        Parameters:
-            scaler (int): Scaler amount for the transformation
-
-        Returns:
-            Country: New country after given transformation
-        """
-
-        new_state = copy.deepcopy(self)
-        
-        new_state.water -= 10*scaler
-        
-        self.food += 1*scaler
-        self.food_waste += int(0.5*scaler)
-        
-        return new_state

@@ -74,9 +74,9 @@ class Simulation:
             None
         """
 
-        self.load_countries(self.countries_file_name)
         self.load_weights(self.weights_file_name)
-
+        self.load_countries(self.countries_file_name)
+        
     def load_weights(self, file_name: str):
         """Loads the weights of resources from the given file
 
@@ -104,7 +104,7 @@ class Simulation:
         df = pd.read_excel(file_name)
 
         for index, row in df.iterrows():
-            args = list(row.values) + [self.state_reduction]
+            args = list(row.values) + [self.state_reduction] + [self.r_weights]
             self.countries[args[0]] = Country(*args)
 
     def calculate_reward(self, solution: Solution):
@@ -122,8 +122,7 @@ class Simulation:
         """
         
         C = 0.1
-
-        new_state = solution.path[-1][1]        
+        new_state = solution.path[-1][1]   
         curr_quality = new_state.state_value()
         og_quality = solution.path[0][1].state_value()
 
@@ -135,15 +134,18 @@ class Simulation:
                 other_country_probobility.append(math.log(other_c_utility))
 
         if other_country_probobility:
-            other_c_prob = sum(other_country_probobility) / \
-                len(other_country_probobility)
+            other_c_prob = sum(other_country_probobility) / len(other_country_probobility)
+        
         else:
             other_c_prob = 1
         
         discounted_reward = round(pow(self.gamma, len(solution.path)+1) * (curr_quality - og_quality), 3)
         expected_utility = (other_c_prob * discounted_reward) + ((1 - other_c_prob) * C)
 
-        return expected_utility
+        solution.path[-1] += [expected_utility]
+        solution.priority = expected_utility
+        
+        return solution
 
     def generate_transform_succesors(self, solution: Solution):
         """Given the current solution, computes all possible transforms 
@@ -167,47 +169,47 @@ class Simulation:
 
         for scaler in housing_scalers:
 
-            trans = HousingTransform(curr_state, scaler)
+            trans = HousingTransform(scaler)
             new_state = curr_state.housing_transform(scaler)
             new_solution = copy.deepcopy(solution)
             new_solution.path += [[trans, new_state, self.countries]]
-            new_solution.priority = self.calculate_reward(new_solution)
+            new_solution = self.calculate_reward(new_solution)
             self.frontier.push(new_solution)
 
         for scaler in alloy_scalers:
 
-            trans = AlloyTransform(curr_state, scaler)
+            trans = AlloyTransform(scaler)
             new_state = curr_state.alloys_transform(scaler)
             new_solution = copy.deepcopy(solution)
             new_solution.path += [[trans, new_state, self.countries]]
-            new_solution.priority = self.calculate_reward(new_solution)
+            new_solution = self.calculate_reward(new_solution)
             self.frontier.push(new_solution)
 
         for scaler in electronics_scalers:
 
-            trans = ElectronicTransform(curr_state, scaler)
+            trans = ElectronicTransform(scaler)
             new_state = curr_state.electronics_transform(scaler)
             new_solution = copy.deepcopy(solution)
             new_solution.path += [[trans, new_state, self.countries]]
-            new_solution.priority = self.calculate_reward(new_solution)
+            new_solution = self.calculate_reward(new_solution)
             self.frontier.push(new_solution)
         
         for scaler in food_scalers:
 
-            trans = FoodTransform(curr_state, scaler)
+            trans = FoodTransform(scaler)
             new_state = curr_state.food_transform(scaler)
             new_solution = copy.deepcopy(solution)
             new_solution.path += [[trans, new_state, self.countries]]
-            new_solution.priority = self.calculate_reward(new_solution)
+            new_solution = self.calculate_reward(new_solution)
             self.frontier.push(new_solution)
     
         for scaler in farm_scalers:
 
-            trans = FarmTransform(curr_state, scaler)
+            trans = FarmTransform(scaler)
             new_state = curr_state.farm_transform(scaler)
             new_solution = copy.deepcopy(solution)
             new_solution.path += [[trans, new_state, self.countries]]
-            new_solution.priority = self.calculate_reward(new_solution)
+            new_solution = self.calculate_reward(new_solution)
             self.frontier.push(new_solution)
 
     def generate_transfer_succesors(self, solution: Solution):
@@ -229,26 +231,16 @@ class Simulation:
         curr_elms = {
             'metalic_elm': curr_state.metalic_elm,
             'timber': curr_state.timber,
-            'metalic_alloys': curr_state.metalic_alloys,
-            'electronics': curr_state.electronics,
-            'housing': curr_state.housing,
             'available_land': curr_state.available_land,
             'water': curr_state.water,
-            'farm': curr_state.farm,
-            'food': curr_state.food
         }
 
         for c in curr_countries:
             countries_elms[c] = {
                 'metalic_elm': curr_countries[c].metalic_elm,
                 'timber': curr_countries[c].timber,
-                'metalic_alloys': curr_countries[c].metalic_alloys,
-                'electronics': curr_countries[c].electronics,
-                'housing': curr_countries[c].housing,
                 'available_land': curr_state.available_land,
                 'water': curr_state.water,
-                'farm': curr_state.farm,
-                'food': curr_state.food
             }
 
         for c in countries_elms:
@@ -258,39 +250,58 @@ class Simulation:
                     
                     if curr_elm == elm:     # Skipping to avoid redundant trades
                         continue
-                    
-                    other_elm_scale = 1 / self.r_weights[elm]
-                    self_elm_scale = 1 / self.r_weights[curr_elm]
+
+                    other_elm_scale = 1 / self.r_weights[curr_elm]
+                    self_elm_scale = 1 / self.r_weights[elm] 
                     max_amount = min(int(countries_elms[c][elm]/other_elm_scale), int(curr_elms[curr_elm]/self_elm_scale))
-
-                    poss_trades = [i+1 for i in range(max_amount)]
-                    num_buckets = ceil(len(poss_trades) / self.state_reduction)
-
-                    if num_buckets < 1 or len(poss_trades) == 0:
-                        continue
-
-                    amounts = []
-                    buckets = np.array_split(poss_trades, num_buckets)
                     
-                    for bucket in buckets:
-                        if len(bucket) > 0:
-                            amounts.append(int(sum(bucket)/len(bucket)))
+                    if max_amount <= 0:
+                        continue
+                    
+                    if self.state_reduction == -1:       # Ultimate reduction
+                        
+                        other_elm_amount = ceil(max_amount / other_elm_scale)
+                        self_elm_amount = ceil(max_amount / self_elm_scale)
 
-                    for amount in amounts:
-
-                        other_elm_amount = ceil(amount / other_elm_scale)
-                        self_elm_amount = ceil(amount / self_elm_scale)
-
-                        trade = Transfer(
-                            elm, curr_elm, other_elm_amount, self_elm_amount, c, curr_state.name)
-                        new_curr_state = curr_state.make_trade(
-                            curr_elm, self_elm_amount)
+                        trade = Transfer(elm, curr_elm, other_elm_amount, self_elm_amount, c, curr_state.name)
+                        new_curr_state = curr_state.make_trade(curr_elm, self_elm_amount)
                         new_countries = copy.deepcopy(curr_countries)
                         new_countries[c] = curr_countries[c].make_trade(elm, other_elm_amount)
                         new_solution = copy.deepcopy(solution)
                         new_solution.path += [[trade, new_curr_state, new_countries]]
-                        new_solution.priority = self.calculate_reward(new_solution)
+                        new_solution = self.calculate_reward(new_solution)
                         self.frontier.push(new_solution)
+                    
+                    else:
+    
+                        poss_trades = [i+1 for i in range(max_amount)]
+                        num_buckets = ceil(len(poss_trades) / self.state_reduction)
+
+                        if num_buckets < 1 or len(poss_trades) == 0:
+                            continue
+
+                        amounts = []
+                        buckets = np.array_split(poss_trades, num_buckets)
+                        
+                        for bucket in buckets:
+                            if len(bucket) > 0:
+                                amounts.append(int(sum(bucket)/len(bucket)))
+
+                        for amount in amounts:
+
+                            other_elm_amount = ceil(amount / other_elm_scale)
+                            self_elm_amount = ceil(amount / self_elm_scale)
+
+                            trade = Transfer(
+                                elm, curr_elm, other_elm_amount, self_elm_amount, c, curr_state.name)
+                            new_curr_state = curr_state.make_trade(
+                                curr_elm, self_elm_amount)
+                            new_countries = copy.deepcopy(curr_countries)
+                            new_countries[c] = curr_countries[c].make_trade(elm, other_elm_amount)
+                            new_solution = copy.deepcopy(solution)
+                            new_solution.path += [[trade, new_curr_state, new_countries]]
+                            new_solution = self.calculate_reward(new_solution)
+                            self.frontier.push(new_solution)
 
     def generate_succesors(self, solution: Solution):
         """Given the current solution, calls functions
@@ -319,7 +330,7 @@ class Simulation:
             None
         """
 
-        initial_solution = Solution(self.country.state_value(), [[None, self.country, self.countries]])
+        initial_solution = Solution(self.country.state_value(), [[None, self.country, self.countries, 0]])
         self.frontier.push(initial_solution)
 
         while not self.frontier.empty():
@@ -346,8 +357,9 @@ class Simulation:
             None
         """
 
+        print("CodeWord")
         total = 0
-        initial_solution = Solution(self.country.state_value(), [[None, self.country, self.countries]])
+        initial_solution = Solution(self.country.state_value(), [[None, self.country, self.countries, 0]])
         self.frontier.push(initial_solution)
         seg_num = int(self.max_frontier_size/os.cpu_count())
 
@@ -359,14 +371,18 @@ class Simulation:
                 
                 shared_frontier = mp.Manager().list()
                 pool = mp.Pool()
-                chunks = np.array_split(
-                    np.array(self.frontier.queue), os.cpu_count())
+                chunks = np.array_split(np.array(self.frontier.queue), os.cpu_count())
                 self.frontier.queue = []
 
                 for chunk in chunks:
-                    pool.apply_async(func=generate_succesors_parallel, args=(
-                        chunk, self.countries, shared_frontier, self.gamma, self.r_weights, self.state_reduction, self.depth, seg_num))
-
+                    pool.apply_async(
+                        func=generate_succesors_parallel, 
+                        args=(chunk, self.countries, 
+                              shared_frontier, self.gamma, 
+                              self.r_weights, self.state_reduction, 
+                              self.depth, seg_num)
+                        )
+                    
                 pool.close()
                 pool.join()
                 
@@ -412,7 +428,7 @@ def calculate_reward_parallel(solution: Solution, countries: dict, gamma: int):
     new_state = solution.path[-1][1]
     curr_quality = new_state.state_value()
     og_quality = solution.path[0][1].state_value()
-
+    
     other_country_probobility = []
     for step in solution.path:
 
@@ -432,7 +448,9 @@ def calculate_reward_parallel(solution: Solution, countries: dict, gamma: int):
     expected_utility = (other_c_prob * discounted_reward) + \
         ((1 - other_c_prob) * 0.1)
 
-    return expected_utility
+    solution.path[-1] += [expected_utility]
+    solution.priority = expected_utility
+    return solution
 
 def generate_transfer_succesors_parallel(solution: Solution, r_weights: ResourceWeights, countries: dict, 
                                          state_reduction: int, shared_frontier: PriorityQueue, gamma: int):
@@ -459,26 +477,16 @@ def generate_transfer_succesors_parallel(solution: Solution, r_weights: Resource
     curr_elms = {
         'metalic_elm': curr_state.metalic_elm,
         'timber': curr_state.timber,
-        'metalic_alloys': curr_state.metalic_alloys,
-        'electronics': curr_state.electronics,
-        'housing': curr_state.housing,
         'available_land': curr_state.available_land,
         'water': curr_state.water,
-        'farm': curr_state.farm,
-        'food': curr_state.food
     }
 
     for c in curr_countries:
         countries_elms[c] = {
             'metalic_elm': curr_countries[c].metalic_elm,
             'timber': curr_countries[c].timber,
-            'metalic_alloys': curr_countries[c].metalic_alloys,
-            'electronics': curr_countries[c].electronics,
-            'housing': curr_countries[c].housing,
             'available_land': curr_state.available_land,
             'water': curr_state.water,
-            'farm': curr_state.farm,
-            'food': curr_state.food
         }
 
     for c in countries_elms:
@@ -489,27 +497,17 @@ def generate_transfer_succesors_parallel(solution: Solution, r_weights: Resource
                 if curr_elm == elm:     # Skipping to avoid redundant trades
                     continue
 
-                other_elm_scale = 1 / r_weights[elm]
-                self_elm_scale = 1 / r_weights[curr_elm]
+                other_elm_scale = 1 / r_weights[curr_elm]
+                self_elm_scale = 1 / r_weights[elm] 
                 max_amount = min(int(countries_elms[c][elm]/other_elm_scale), int(curr_elms[curr_elm]/self_elm_scale))
 
-                poss_trades = [i+1 for i in range(max_amount)]
-                num_buckets = ceil(len(poss_trades) / state_reduction)
-
-                if num_buckets < 1 or len(poss_trades) == 0:
+                if max_amount <= 0:
                     continue
-
-                amounts = []
-                buckets = np.array_split(poss_trades, num_buckets)
                 
-                for bucket in buckets:
-                    if len(bucket) > 0:
-                        amounts.append(int(sum(bucket)/len(bucket)))
-
-                for amount in amounts:
-
-                    other_elm_amount = ceil(amount / other_elm_scale)
-                    self_elm_amount = ceil(amount / self_elm_scale)
+                if state_reduction == -1:
+                    
+                    other_elm_amount = ceil(max_amount / other_elm_scale)
+                    self_elm_amount = ceil(max_amount / self_elm_scale)
 
                     trade = Transfer(elm, curr_elm, other_elm_amount, self_elm_amount, c, curr_state.name)
                     new_curr_state = curr_state.make_trade(curr_elm, self_elm_amount)
@@ -517,8 +515,37 @@ def generate_transfer_succesors_parallel(solution: Solution, r_weights: Resource
                     new_countries[c] = curr_countries[c].make_trade(elm, other_elm_amount)
                     new_solution = copy.deepcopy(solution)
                     new_solution.path += [[trade, new_curr_state, new_countries]]
-                    new_solution.priority = calculate_reward_parallel(new_solution, countries, gamma)
+                    new_solution = calculate_reward_parallel(new_solution, countries, gamma)
                     shared_frontier.push(new_solution)
+                
+                else: 
+                    
+                    poss_trades = [i+1 for i in range(max_amount)]
+                    num_buckets = ceil(len(poss_trades) / state_reduction)
+
+                    if num_buckets < 1 or len(poss_trades) == 0:
+                        continue
+
+                    amounts = []
+                    buckets = np.array_split(poss_trades, num_buckets)
+                    
+                    for bucket in buckets:
+                        if len(bucket) > 0:
+                            amounts.append(int(sum(bucket)/len(bucket)))
+
+                    for amount in amounts:
+
+                        other_elm_amount = ceil(amount / other_elm_scale)
+                        self_elm_amount = ceil(amount / self_elm_scale)
+
+                        trade = Transfer(elm, curr_elm, other_elm_amount, self_elm_amount, c, curr_state.name)
+                        new_curr_state = curr_state.make_trade(curr_elm, self_elm_amount)
+                        new_countries = copy.deepcopy(curr_countries)
+                        new_countries[c] = curr_countries[c].make_trade(elm, other_elm_amount)
+                        new_solution = copy.deepcopy(solution)
+                        new_solution.path += [[trade, new_curr_state, new_countries]]
+                        new_solution = calculate_reward_parallel(new_solution, countries, gamma)
+                        shared_frontier.push(new_solution)
 
 def generate_transform_succesors_parallel(solution: Solution, countries: dict, shared_frontier: PriorityQueue, 
                                           gamma: int) -> None:
@@ -546,47 +573,47 @@ def generate_transform_succesors_parallel(solution: Solution, countries: dict, s
 
     for scaler in housing_scalers:
 
-        trans = HousingTransform(curr_state, scaler)
+        trans = HousingTransform(scaler)
         new_state = curr_state.housing_transform(scaler)
         new_solution = copy.deepcopy(solution)
         new_solution.path += [[trans, new_state, countries]]
-        new_solution.priority = calculate_reward_parallel(new_solution, countries, gamma)
+        new_solution = calculate_reward_parallel(new_solution, countries, gamma)
         shared_frontier.push(new_solution)
 
     for scaler in alloy_scalers:
 
-        trans = AlloyTransform(curr_state, scaler)
+        trans = AlloyTransform(scaler)
         new_state = curr_state.alloys_transform(scaler)
         new_solution = copy.deepcopy(solution)
         new_solution.path += [[trans, new_state, countries]]
-        new_solution.priority = calculate_reward_parallel(new_solution, countries, gamma)
+        new_solution = calculate_reward_parallel(new_solution, countries, gamma)
         shared_frontier.push(new_solution)
 
     for scaler in electronics_scalers:
 
-        trans = ElectronicTransform(curr_state, scaler)
+        trans = ElectronicTransform(scaler)
         new_state = curr_state.electronics_transform(scaler)
         new_solution = copy.deepcopy(solution)
         new_solution.path += [[trans, new_state, countries]]
-        new_solution.priority = calculate_reward_parallel(new_solution, countries, gamma)
+        new_solution = calculate_reward_parallel(new_solution, countries, gamma)
         shared_frontier.push(new_solution)
     
     for scaler in food_scalers:
 
-        trans = FoodTransform(curr_state, scaler)
+        trans = FoodTransform(scaler)
         new_state = curr_state.food_transform(scaler)
         new_solution = copy.deepcopy(solution)
         new_solution.path += [[trans, new_state, countries]]
-        new_solution.priority = calculate_reward_parallel(new_solution, countries, gamma)
+        new_solution = calculate_reward_parallel(new_solution, countries, gamma)
         shared_frontier.push(new_solution)
     
     for scaler in farm_scalers:
 
-        trans = FarmTransform(curr_state, scaler)
+        trans = FarmTransform(scaler)
         new_state = curr_state.farm_transform(scaler)
         new_solution = copy.deepcopy(solution)
         new_solution.path += [[trans, new_state, countries]]
-        new_solution.priority = calculate_reward_parallel(new_solution, countries, gamma)
+        new_solution = calculate_reward_parallel(new_solution, countries, gamma)
         shared_frontier.push(new_solution)
 
 def generate_succesors_parallel(chunk: list[Solution], countries: dict, shared_frontier: list, 
@@ -614,10 +641,8 @@ def generate_succesors_parallel(chunk: list[Solution], countries: dict, shared_f
     temp_frontier = PriorityQueue(max_size)     
 
     for solution in chunk:
-        generate_transform_succesors_parallel(
-            solution, countries, temp_frontier, gamma)
-        generate_transfer_succesors_parallel(
-            solution, r_weights, countries, state_reduction, temp_frontier, gamma)
+        generate_transform_succesors_parallel(solution, countries, temp_frontier, gamma)
+        generate_transfer_succesors_parallel(solution, r_weights, countries, state_reduction, temp_frontier, gamma)
 
     while not temp_frontier.empty():
 
@@ -627,10 +652,8 @@ def generate_succesors_parallel(chunk: list[Solution], countries: dict, shared_f
             shared_frontier.append(curr_solution)
             continue
 
-        generate_transform_succesors_parallel(
-            curr_solution, countries, temp_frontier, gamma)
-        generate_transfer_succesors_parallel(
-            curr_solution, r_weights, countries, state_reduction, temp_frontier, gamma)
+        generate_transform_succesors_parallel(curr_solution, countries, temp_frontier, gamma)
+        generate_transfer_succesors_parallel(curr_solution, r_weights, countries, state_reduction, temp_frontier, gamma)
 
 
 """
@@ -660,12 +683,19 @@ def generate_succesors_parallel(chunk: list[Solution], countries: dict, shared_f
 
 def main():
 
-    s = Simulation('Example-Initial-Countries.xlsx',
-                   'Example-Sample-Resources.xlsx', 'Erewhon', 2, 0.8, 10, 10000)
+    s = Simulation(
+        'Example-Initial-Countries.xlsx',       # Countries file
+        'Example-Sample-Resources.xlsx',        # Resources file
+        'Erewhon',                              # Self country
+        3,                                      # Depth
+        0.8,                                    # Gamma
+        -1,                                     # State Reduction (-1 for the most)
+        1000                                    # Frontier size
+    )
 
     start = time.time()
-    # s.search()
-    s.search_parallel()
+    #s.search()
+    s.search_parallel()     # need to reformat parallel as well
     end = time.time()
 
     print(f"Took: {end-start}")

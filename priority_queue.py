@@ -34,10 +34,11 @@ class Solution:
             None
         """
         
-        print(f"Expected Utility for Solution: {self.priority}")
-        for p in self.path:
+        print(f"Expected Utility for Total Solution: {round(self.priority, 2)}\n")
+        for p in self.path: 
             
             if p[0] != None:
+                print(f'Expected Utility for This Action: {p[3]}')
                 p[0].print()
             
             
@@ -69,7 +70,7 @@ class PriorityQueue:
         Returns:
             None
         """
-        
+                
         if len(self.queue) > self.max_size:
             heapq.heappop(self.queue)
         
