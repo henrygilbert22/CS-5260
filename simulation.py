@@ -145,8 +145,6 @@ class Simulation:
         solution.path[-1] += [expected_utility]
         solution.priority = expected_utility
         
-        return solution
-
     def generate_transform_succesors(self, solution: Solution):
         """Given the current solution, computes all possible transforms 
         and the resulting states. Stores new states and corresponding
@@ -173,7 +171,7 @@ class Simulation:
             new_state = curr_state.housing_transform(scaler)
             new_solution = copy.deepcopy(solution)
             new_solution.path += [[trans, new_state, self.countries]]
-            new_solution = self.calculate_reward(new_solution)
+            self.calculate_reward(new_solution)
             self.frontier.push(new_solution)
 
         for scaler in alloy_scalers:
@@ -182,7 +180,7 @@ class Simulation:
             new_state = curr_state.alloys_transform(scaler)
             new_solution = copy.deepcopy(solution)
             new_solution.path += [[trans, new_state, self.countries]]
-            new_solution = self.calculate_reward(new_solution)
+            self.calculate_reward(new_solution)
             self.frontier.push(new_solution)
 
         for scaler in electronics_scalers:
@@ -191,7 +189,7 @@ class Simulation:
             new_state = curr_state.electronics_transform(scaler)
             new_solution = copy.deepcopy(solution)
             new_solution.path += [[trans, new_state, self.countries]]
-            new_solution = self.calculate_reward(new_solution)
+            self.calculate_reward(new_solution)
             self.frontier.push(new_solution)
         
         for scaler in food_scalers:
@@ -200,7 +198,7 @@ class Simulation:
             new_state = curr_state.food_transform(scaler)
             new_solution = copy.deepcopy(solution)
             new_solution.path += [[trans, new_state, self.countries]]
-            new_solution = self.calculate_reward(new_solution)
+            self.calculate_reward(new_solution)
             self.frontier.push(new_solution)
     
         for scaler in farm_scalers:
@@ -209,7 +207,7 @@ class Simulation:
             new_state = curr_state.farm_transform(scaler)
             new_solution = copy.deepcopy(solution)
             new_solution.path += [[trans, new_state, self.countries]]
-            new_solution = self.calculate_reward(new_solution)
+            self.calculate_reward(new_solution)
             self.frontier.push(new_solution)
 
     def generate_transfer_succesors(self, solution: Solution):
@@ -269,7 +267,7 @@ class Simulation:
                         new_countries[c] = curr_countries[c].make_trade(elm, other_elm_amount)
                         new_solution = copy.deepcopy(solution)
                         new_solution.path += [[trade, new_curr_state, new_countries]]
-                        new_solution = self.calculate_reward(new_solution)
+                        self.calculate_reward(new_solution)
                         self.frontier.push(new_solution)
                     
                     else:
@@ -300,7 +298,7 @@ class Simulation:
                             new_countries[c] = curr_countries[c].make_trade(elm, other_elm_amount)
                             new_solution = copy.deepcopy(solution)
                             new_solution.path += [[trade, new_curr_state, new_countries]]
-                            new_solution = self.calculate_reward(new_solution)
+                            self.calculate_reward(new_solution)
                             self.frontier.push(new_solution)
 
     def generate_succesors(self, solution: Solution):
@@ -357,7 +355,6 @@ class Simulation:
             None
         """
 
-        print("CodeWord")
         total = 0
         initial_solution = Solution(self.country.state_value(), [[None, self.country, self.countries, 0]])
         self.frontier.push(initial_solution)
@@ -437,20 +434,18 @@ def calculate_reward_parallel(solution: Solution, countries: dict, gamma: int):
             other_country_probobility.append(math.log(other_c_utility))
 
     if other_country_probobility:
-        other_c_prob = sum(other_country_probobility) / \
-            len(other_country_probobility)
+        other_c_prob = sum(other_country_probobility) / len(other_country_probobility)
+    
     else:
         other_c_prob = 1
 
     discounted_reward = round(
         pow(gamma, len(solution.path)+1) * (curr_quality - og_quality), 3)
 
-    expected_utility = (other_c_prob * discounted_reward) + \
-        ((1 - other_c_prob) * 0.1)
+    expected_utility = (other_c_prob * discounted_reward) + ((1 - other_c_prob) * 0.1)
 
     solution.path[-1] += [expected_utility]
     solution.priority = expected_utility
-    return solution
 
 def generate_transfer_succesors_parallel(solution: Solution, r_weights: ResourceWeights, countries: dict, 
                                          state_reduction: int, shared_frontier: PriorityQueue, gamma: int):
@@ -478,7 +473,7 @@ def generate_transfer_succesors_parallel(solution: Solution, r_weights: Resource
         'metalic_elm': curr_state.metalic_elm,
         'timber': curr_state.timber,
         'available_land': curr_state.available_land,
-        'water': curr_state.water,
+        'water': curr_state.water
     }
 
     for c in curr_countries:
@@ -486,7 +481,7 @@ def generate_transfer_succesors_parallel(solution: Solution, r_weights: Resource
             'metalic_elm': curr_countries[c].metalic_elm,
             'timber': curr_countries[c].timber,
             'available_land': curr_state.available_land,
-            'water': curr_state.water,
+            'water': curr_state.water
         }
 
     for c in countries_elms:
@@ -515,7 +510,7 @@ def generate_transfer_succesors_parallel(solution: Solution, r_weights: Resource
                     new_countries[c] = curr_countries[c].make_trade(elm, other_elm_amount)
                     new_solution = copy.deepcopy(solution)
                     new_solution.path += [[trade, new_curr_state, new_countries]]
-                    new_solution = calculate_reward_parallel(new_solution, countries, gamma)
+                    calculate_reward_parallel(new_solution, countries, gamma)
                     shared_frontier.push(new_solution)
                 
                 else: 
@@ -544,7 +539,7 @@ def generate_transfer_succesors_parallel(solution: Solution, r_weights: Resource
                         new_countries[c] = curr_countries[c].make_trade(elm, other_elm_amount)
                         new_solution = copy.deepcopy(solution)
                         new_solution.path += [[trade, new_curr_state, new_countries]]
-                        new_solution = calculate_reward_parallel(new_solution, countries, gamma)
+                        calculate_reward_parallel(new_solution, countries, gamma)
                         shared_frontier.push(new_solution)
 
 def generate_transform_succesors_parallel(solution: Solution, countries: dict, shared_frontier: PriorityQueue, 
@@ -577,7 +572,7 @@ def generate_transform_succesors_parallel(solution: Solution, countries: dict, s
         new_state = curr_state.housing_transform(scaler)
         new_solution = copy.deepcopy(solution)
         new_solution.path += [[trans, new_state, countries]]
-        new_solution = calculate_reward_parallel(new_solution, countries, gamma)
+        calculate_reward_parallel(new_solution, countries, gamma)
         shared_frontier.push(new_solution)
 
     for scaler in alloy_scalers:
@@ -586,7 +581,7 @@ def generate_transform_succesors_parallel(solution: Solution, countries: dict, s
         new_state = curr_state.alloys_transform(scaler)
         new_solution = copy.deepcopy(solution)
         new_solution.path += [[trans, new_state, countries]]
-        new_solution = calculate_reward_parallel(new_solution, countries, gamma)
+        calculate_reward_parallel(new_solution, countries, gamma)
         shared_frontier.push(new_solution)
 
     for scaler in electronics_scalers:
@@ -595,7 +590,7 @@ def generate_transform_succesors_parallel(solution: Solution, countries: dict, s
         new_state = curr_state.electronics_transform(scaler)
         new_solution = copy.deepcopy(solution)
         new_solution.path += [[trans, new_state, countries]]
-        new_solution = calculate_reward_parallel(new_solution, countries, gamma)
+        calculate_reward_parallel(new_solution, countries, gamma)
         shared_frontier.push(new_solution)
     
     for scaler in food_scalers:
@@ -604,7 +599,7 @@ def generate_transform_succesors_parallel(solution: Solution, countries: dict, s
         new_state = curr_state.food_transform(scaler)
         new_solution = copy.deepcopy(solution)
         new_solution.path += [[trans, new_state, countries]]
-        new_solution = calculate_reward_parallel(new_solution, countries, gamma)
+        calculate_reward_parallel(new_solution, countries, gamma)
         shared_frontier.push(new_solution)
     
     for scaler in farm_scalers:
@@ -613,7 +608,7 @@ def generate_transform_succesors_parallel(solution: Solution, countries: dict, s
         new_state = curr_state.farm_transform(scaler)
         new_solution = copy.deepcopy(solution)
         new_solution.path += [[trans, new_state, countries]]
-        new_solution = calculate_reward_parallel(new_solution, countries, gamma)
+        calculate_reward_parallel(new_solution, countries, gamma)
         shared_frontier.push(new_solution)
 
 def generate_succesors_parallel(chunk: list[Solution], countries: dict, shared_frontier: list, 
