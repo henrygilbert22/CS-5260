@@ -328,7 +328,9 @@ class Simulation:
             None
         """
 
-        initial_solution = Solution(self.country.state_value(), [[None, self.country, self.countries, 0]])
+        initial_solution = Solution(self.country.state_value(), 
+            [[None, self.country, self.countries, 0]])
+        
         self.frontier.push(initial_solution)
 
         while not self.frontier.empty():

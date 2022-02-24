@@ -97,7 +97,7 @@ class Country:
             (self.weights['food_waste'] * self.food_waste)
             )
         
-        return round(resource_score + 10*developement_score - waste_score, 2)            # make this more complex at some point
+        return round(resource_score + 10*developement_score - waste_score, 2) 
     
     def make_trade(self, resource: str, amount: int):
         """Function to subtract resource for any
