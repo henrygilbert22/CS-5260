@@ -9,7 +9,7 @@ import numpy as np
 from more_itertools import chunked
 import math
 import os
-import sys
+from typing import List
 
 from priority_queue import PriorityQueue, Solution
 from transforms import FarmTransform, FoodTransform, HousingTransform, AlloyTransform, ElectronicTransform
@@ -18,7 +18,7 @@ from transfer import Transfer
 
 class Simulation:
 
-    countries: list[Country]
+    countries: List[Country]
     r_weights: ResourceWeights
 
     countries_file_name: str
@@ -611,7 +611,7 @@ def generate_transform_succesors_parallel(solution: Solution, countries: dict, s
         calculate_reward_parallel(new_solution, countries, gamma)
         shared_frontier.push(new_solution)
 
-def generate_succesors_parallel(chunk: list[Solution], countries: dict, shared_frontier: list, 
+def generate_succesors_parallel(chunk: List[Solution], countries: dict, shared_frontier: list, 
                                 gamma: int, r_weights: ResourceWeights, state_reduction: int, 
                                 depth: int, max_size: int) -> None:
     """ This function takes in a chunk of solutions and performs a pseudo beam search on the next steps in 
