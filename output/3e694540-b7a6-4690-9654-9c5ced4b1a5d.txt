@@ -1,0 +1,26 @@
+Expected Utility for Total Solution: -54.62
+Expected Utility for This Action: -34.69709060247094
+        TRANSFER:
+            OTHER   -   SELF
+            Atlantis -   Erewhon
+            available_land  -   water
+            85    -   85
+            85  -   43
+
+        Expected Utility for This Action: -54.47958048528809
+        TRANSFER:
+            OTHER   -   SELF
+            Atlantis -   Erewhon
+            water  -   available_land
+            42    -   42
+            42  -   84
+
+        Expected Utility for This Action: -54.61586755304425
+        TRANSFER:
+            OTHER   -   SELF
+            Brobdingnag -   Erewhon
+            timber  -   water
+            48    -   48
+            48  -   24
+
+        

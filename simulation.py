@@ -10,6 +10,7 @@ from more_itertools import chunked
 import math
 import os
 from typing import List
+import uuid
 
 from priority_queue import PriorityQueue, Solution
 from transforms import FarmTransform, FoodTransform, HousingTransform, AlloyTransform, ElectronicTransform
@@ -32,8 +33,11 @@ class Simulation:
     max_frontier_size: int
     gamma: float
     state_reduction: int
+    C: int
 
-    def __init__(self, countries_file_name: str, weights_file_name: str, country: int, depth: int, gamma: float, state_reduction: int, max_frontier_size: int) -> None:
+    def __init__(self, countries_file_name: str, weights_file_name: str, 
+                 country: int, depth: int, gamma: float, state_reduction: int, 
+                 max_frontier_size: int, solution_size: int, C: int) -> None:
         """Initialization function for Simulation class
 
         Args:
@@ -56,7 +60,8 @@ class Simulation:
         self.state_reduction = state_reduction
         self.countries = {}
         self.frontier = PriorityQueue(max_frontier_size)
-        self.solutions = PriorityQueue(3)
+        self.solutions = PriorityQueue(solution_size)
+        self.C = C
 
         self.load()
 
@@ -121,10 +126,9 @@ class Simulation:
             EU (float): Expected Utility of the state
         """
         
-        C = 0.1
         new_state = solution.path[-1][1]   
         curr_quality = new_state.state_value()
-        og_quality = solution.path[0][1].state_value()
+        og_quality = solution.path[-2][1].state_value()
 
         other_country_probobility = []
         for step in solution.path:
@@ -140,7 +144,7 @@ class Simulation:
             other_c_prob = 1
         
         discounted_reward = round(pow(self.gamma, len(solution.path)+1) * (curr_quality - og_quality), 3)
-        expected_utility = (other_c_prob * discounted_reward) + ((1 - other_c_prob) * C)
+        expected_utility = (other_c_prob * discounted_reward) + ((1 - other_c_prob) * self.C)
 
         solution.path[-1] += [expected_utility]
         solution.priority = expected_utility
@@ -328,11 +332,13 @@ class Simulation:
             None
         """
 
+        total = 1
         initial_solution = Solution(self.country.state_value(), [[None, self.country, self.countries, 0]])
         self.frontier.push(initial_solution)
 
         while not self.frontier.empty():
 
+            total += 1
             solution = self.frontier.pop()
 
             if len(solution.path) > self.depth:
@@ -340,6 +346,8 @@ class Simulation:
                 continue
 
             self.generate_succesors(solution)
+        
+        print(f'Total States: {total}')
 
     def search_parallel(self) -> None:
         """This function searches the possible state space in parallel,
@@ -355,14 +363,14 @@ class Simulation:
             None
         """
 
-        total = 0
+        total = 1
         initial_solution = Solution(self.country.state_value(), [[None, self.country, self.countries, 0]])
         self.frontier.push(initial_solution)
         seg_num = int(self.max_frontier_size/os.cpu_count())
 
         while not self.frontier.empty():
-
-            if len(self.frontier.queue) == seg_num:      # Maybe we only need the top 10?
+            
+            if len(self.frontier.queue) >= seg_num:      # Maybe we only need the top 10?
                 
                 print("starting parallel")
                 
@@ -377,7 +385,7 @@ class Simulation:
                         args=(chunk, self.countries, 
                               shared_frontier, self.gamma, 
                               self.r_weights, self.state_reduction, 
-                              self.depth, seg_num)
+                              self.depth, seg_num, self.C)
                         )
                     
                 pool.close()
@@ -404,9 +412,11 @@ class Simulation:
                     continue
 
                 self.generate_succesors(solution)
+            
+        print(f'Total States: {total}')
 
 
-def calculate_reward_parallel(solution: Solution, countries: dict, gamma: int):
+def calculate_reward_parallel(solution: Solution, countries: dict, gamma: float, C: float):
     """Function to calculate reward of a given state. Given the current solution, 
         calculate the state quality, the undiscounted reward, the discounted reward,
         the probility a country accepts said transform (if applicable)
@@ -424,7 +434,7 @@ def calculate_reward_parallel(solution: Solution, countries: dict, gamma: int):
 
     new_state = solution.path[-1][1]
     curr_quality = new_state.state_value()
-    og_quality = solution.path[0][1].state_value()
+    og_quality = solution.path[-2][1].state_value()
     
     other_country_probobility = []
     for step in solution.path:
@@ -442,13 +452,13 @@ def calculate_reward_parallel(solution: Solution, countries: dict, gamma: int):
     discounted_reward = round(
         pow(gamma, len(solution.path)+1) * (curr_quality - og_quality), 3)
 
-    expected_utility = (other_c_prob * discounted_reward) + ((1 - other_c_prob) * 0.1)
+    expected_utility = (other_c_prob * discounted_reward) + ((1 - other_c_prob) * C)
 
     solution.path[-1] += [expected_utility]
     solution.priority = expected_utility
 
 def generate_transfer_succesors_parallel(solution: Solution, r_weights: ResourceWeights, countries: dict, 
-                                         state_reduction: int, shared_frontier: PriorityQueue, gamma: int):
+                                         state_reduction: int, shared_frontier: PriorityQueue, gamma: int, C: float):
     """Give the current solution and associated information, the function calculates
     all next potential transfer and the resuling states. The function adds these transfers
     and resulting states to the given shared_frontier as they are calculated
@@ -510,7 +520,7 @@ def generate_transfer_succesors_parallel(solution: Solution, r_weights: Resource
                     new_countries[c] = curr_countries[c].make_trade(elm, other_elm_amount)
                     new_solution = copy.deepcopy(solution)
                     new_solution.path += [[trade, new_curr_state, new_countries]]
-                    calculate_reward_parallel(new_solution, countries, gamma)
+                    calculate_reward_parallel(new_solution, countries, gamma, C)
                     shared_frontier.push(new_solution)
                 
                 else: 
@@ -539,11 +549,11 @@ def generate_transfer_succesors_parallel(solution: Solution, r_weights: Resource
                         new_countries[c] = curr_countries[c].make_trade(elm, other_elm_amount)
                         new_solution = copy.deepcopy(solution)
                         new_solution.path += [[trade, new_curr_state, new_countries]]
-                        calculate_reward_parallel(new_solution, countries, gamma)
+                        calculate_reward_parallel(new_solution, countries, gamma, C)
                         shared_frontier.push(new_solution)
 
 def generate_transform_succesors_parallel(solution: Solution, countries: dict, shared_frontier: PriorityQueue, 
-                                          gamma: int) -> None:
+                                          gamma: int, C: float) -> None:
     """ Given the current soltuion, and needed surrounding information, this function
     searches and finds all potential next transform steps the solution could take. The
     function then adds the next steps to the given shared_frontier.
@@ -572,7 +582,7 @@ def generate_transform_succesors_parallel(solution: Solution, countries: dict, s
         new_state = curr_state.housing_transform(scaler)
         new_solution = copy.deepcopy(solution)
         new_solution.path += [[trans, new_state, countries]]
-        calculate_reward_parallel(new_solution, countries, gamma)
+        calculate_reward_parallel(new_solution, countries, gamma, C)
         shared_frontier.push(new_solution)
 
     for scaler in alloy_scalers:
@@ -581,7 +591,7 @@ def generate_transform_succesors_parallel(solution: Solution, countries: dict, s
         new_state = curr_state.alloys_transform(scaler)
         new_solution = copy.deepcopy(solution)
         new_solution.path += [[trans, new_state, countries]]
-        calculate_reward_parallel(new_solution, countries, gamma)
+        calculate_reward_parallel(new_solution, countries, gamma, C)
         shared_frontier.push(new_solution)
 
     for scaler in electronics_scalers:
@@ -590,7 +600,7 @@ def generate_transform_succesors_parallel(solution: Solution, countries: dict, s
         new_state = curr_state.electronics_transform(scaler)
         new_solution = copy.deepcopy(solution)
         new_solution.path += [[trans, new_state, countries]]
-        calculate_reward_parallel(new_solution, countries, gamma)
+        calculate_reward_parallel(new_solution, countries, gamma, C)
         shared_frontier.push(new_solution)
     
     for scaler in food_scalers:
@@ -599,7 +609,7 @@ def generate_transform_succesors_parallel(solution: Solution, countries: dict, s
         new_state = curr_state.food_transform(scaler)
         new_solution = copy.deepcopy(solution)
         new_solution.path += [[trans, new_state, countries]]
-        calculate_reward_parallel(new_solution, countries, gamma)
+        calculate_reward_parallel(new_solution, countries, gamma, C)
         shared_frontier.push(new_solution)
     
     for scaler in farm_scalers:
@@ -608,12 +618,12 @@ def generate_transform_succesors_parallel(solution: Solution, countries: dict, s
         new_state = curr_state.farm_transform(scaler)
         new_solution = copy.deepcopy(solution)
         new_solution.path += [[trans, new_state, countries]]
-        calculate_reward_parallel(new_solution, countries, gamma)
+        calculate_reward_parallel(new_solution, countries, gamma, C)
         shared_frontier.push(new_solution)
 
 def generate_succesors_parallel(chunk: List[Solution], countries: dict, shared_frontier: list, 
                                 gamma: int, r_weights: ResourceWeights, state_reduction: int, 
-                                depth: int, max_size: int) -> None:
+                                depth: int, max_size: int, C: float) -> None:
     """ This function takes in a chunk of solutions and performs a pseudo beam search on the next steps in 
     the solution. It utilizes a temporty frontier object set at a max size relative to given max size
     and the number of cores in the cpu; this allows it to not over extend the search for given states. 
@@ -636,8 +646,8 @@ def generate_succesors_parallel(chunk: List[Solution], countries: dict, shared_f
     temp_frontier = PriorityQueue(max_size)     
 
     for solution in chunk:
-        generate_transform_succesors_parallel(solution, countries, temp_frontier, gamma)
-        generate_transfer_succesors_parallel(solution, r_weights, countries, state_reduction, temp_frontier, gamma)
+        generate_transform_succesors_parallel(solution, countries, temp_frontier, gamma, C)
+        generate_transfer_succesors_parallel(solution, r_weights, countries, state_reduction, temp_frontier, gamma, C)
 
     while not temp_frontier.empty():
 
@@ -647,9 +657,8 @@ def generate_succesors_parallel(chunk: List[Solution], countries: dict, shared_f
             shared_frontier.append(curr_solution)
             continue
 
-        generate_transform_succesors_parallel(curr_solution, countries, temp_frontier, gamma)
-        generate_transfer_succesors_parallel(curr_solution, r_weights, countries, state_reduction, temp_frontier, gamma)
-
+        generate_transform_succesors_parallel(curr_solution, countries, temp_frontier, gamma, C)
+        generate_transfer_succesors_parallel(curr_solution, r_weights, countries, state_reduction, temp_frontier, gamma, C)
 
 """
     Paralization Metrics
@@ -676,29 +685,131 @@ def generate_succesors_parallel(chunk: List[Solution], countries: dict, shared_f
 # State space scale = 70x
 
 
-def main():
-
+def test_case_1():
+   
     s = Simulation(
-        'Example-Initial-Countries.xlsx',       # Countries file
-        'Example-Sample-Resources.xlsx',        # Resources file
+        'tests/1/case_1_countries.xlsx',       # Countries file
+        'tests/1/case_1_weights.xlsx',        # Resources file
         'Erewhon',                              # Self country
-        3,                                      # Depth
+        4,                                      # Depth
         0.8,                                    # Gamma
         -1,                                     # State Reduction (-1 for the most)
-        1000                                    # Frontier size
+        1000,                                   # Frontier size
+        3,                                      # Solution size
+        0.1                                     # C        
     )
 
     start = time.time()
-    #s.search()
     s.search_parallel()     # need to reformat parallel as well
     end = time.time()
 
     print(f"Took: {end-start}")
 
     best_solution = s.solutions.queue[-1]
+    best_solution.print(f'tests/1/output.txt')
 
-    best_solution.print()
+def test_case_2():
+   
+    s = Simulation(
+        'tests/2/case_2_countries.xlsx',       # Countries file
+        'tests/2/case_2_weights.xlsx',        # Resources file
+        'Erewhon',                              # Self country
+        4,                                      # Depth
+        0.8,                                    # Gamma
+        -1,                                     # State Reduction (-1 for the most)
+        1000,                                   # Frontier size
+        3,                                      # Solution size
+        -500                                     # C        
+    )
+
+    start = time.time()
+    s.search_parallel()     # need to reformat parallel as well
+    end = time.time()
+
+    print(f"Took: {end-start}")
+
+    best_solution = s.solutions.queue[-1]
+    best_solution.print(f'tests/2/output.txt')
+
+def test_case_3():
+   
+    s = Simulation(
+        'tests/3/case_3_countries.xlsx',       # Countries file
+        'tests/3/case_3_weights.xlsx',        # Resources file
+        'Erewhon',                              # Self country
+        4,                                      # Depth
+        0.8,                                    # Gamma
+        -1,                                     # State Reduction (-1 for the most)
+        1000,                                   # Frontier size
+        3,                                      # Solution size
+        1                                   # C        
+    )
+
+    start = time.time()
+    s.search_parallel()     # need to reformat parallel as well
+    end = time.time()
+
+    print(f"Took: {end-start}")
+
+    best_solution = s.solutions.queue[-1]
+    best_solution.print(f'tests/3/output.txt')
+    
+def test_case_4():
+   
+    s = Simulation(
+        'tests/4/case_4_countries.xlsx',       # Countries file
+        'tests/4/case_4_weights.xlsx',        # Resources file
+        'Erewhon',                              # Self country
+        4,                                      # Depth
+        0.8,                                    # Gamma
+        -1,                                     # State Reduction (-1 for the most)
+        1000,                                   # Frontier size
+        3,                                      # Solution size
+        1                                   # C        
+    )
+
+    start = time.time()
+    s.search_parallel()     # need to reformat parallel as well
+    end = time.time()
+
+    print(f"Took: {end-start}")
+
+    best_solution = s.solutions.queue[-1]
+    best_solution.print(f'tests/4/output.txt')
+    
+def main():
+
+    id = str(uuid.uuid4())
+    os.system(f'cp Example-Initial-Countries.xlsx input/{id}.xlsx')
+    
+    s = Simulation(
+        'Example-Initial-Countries.xlsx',       # Countries file
+        'Example-Sample-Resources.xlsx',        # Resources file
+        'Erewhon',                              # Self country
+        3,                                      # Depth
+        0.8,                                    # Gamma
+        1,                                     # State Reduction (-1 for the most)
+        1000,                                   # Frontier size
+        3,                                      # Solution size
+        0.1                                     # C        
+    )
+
+    start = time.time()
+    s.search()
+    #s.search_parallel()     # need to reformat parallel as well
+    end = time.time()
+
+    print(f"Took: {end-start}")
+
+    best_solution = s.solutions.queue[-1]
+
+    best_solution.print(f'output/{id}.txt')
+    print(id)
 
 
 if __name__ == '__main__':
-    main()
+    #main()
+    #test_case_1()
+    #test_case_2()
+    #test_case_3()
+    test_case_4()

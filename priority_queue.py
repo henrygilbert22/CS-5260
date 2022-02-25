@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 import heapq
 from typing import Any
+from unittest.mock import NonCallableMagicMock
 
 
 @dataclass(order=True)
@@ -24,7 +25,7 @@ class Solution:
         self.priority = p
         self.path = path
         
-    def print(self):
+    def print(self, file_name: str):
         """Function to pretty print the solution
         
         Arguements:
@@ -34,12 +35,18 @@ class Solution:
             None
         """
         
-        print(f"Expected Utility for Total Solution: {round(self.priority, 2)}\n")
-        for p in self.path: 
+        with open(file_name, 'a') as f:
             
-            if p[0] != None:
-                print(f'Expected Utility for This Action: {p[3]}')
-                p[0].print()
+            print(f"Expected Utility for Total Solution: {round(self.priority, 2)}\n")
+            f.write(f"Expected Utility for Total Solution: {round(self.priority, 2)}\n")
+            for p in self.path: 
+                
+                if p[0] != None:
+                    print(f'Expected Utility for This Action: {p[3]}')
+                    f.write(f'Expected Utility for This Action: {p[3]}')
+                    f.write(p[0].print())
+            
+            
             
             
         

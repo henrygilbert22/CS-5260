@@ -1,0 +1,12 @@
+Expected Utility for Total Solution: 3838.77
+Expected Utility for This Action: 3838.771
+        FARM TRANSFORM:
+             INPUTS:
+                water: 2840
+                timber: 1420
+                available_land: 2840
+             OUTPUTS:
+                farm: 1420
+                farm_waste: 284
+
+        

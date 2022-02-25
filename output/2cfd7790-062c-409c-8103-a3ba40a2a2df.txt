@@ -1,0 +1,30 @@
+Expected Utility for Total Solution: 20855.7
+Expected Utility for This Action: 3838.771
+        FARM TRANSFORM:
+             INPUTS:
+                water: 2840
+                timber: 1420
+                available_land: 2840
+             OUTPUTS:
+                farm: 1420
+                farm_waste: 284
+
+        Expected Utility for This Action: 23730.085280976873
+        TRANSFER:
+            OTHER   -   SELF
+            Atlantis -   Erewhon
+            available_land  -   timber
+            2    -   2
+            2  -   2
+
+        Expected Utility for This Action: 20855.70495607376
+        FARM TRANSFORM:
+             INPUTS:
+                water: 280
+                timber: 140
+                available_land: 280
+             OUTPUTS:
+                farm: 140
+                farm_waste: 28
+
+        

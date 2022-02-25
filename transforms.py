@@ -49,16 +49,22 @@ class HousingTransform:
             None
         """
         
-        print("HOUSING TRANSFORM:")
-        print(f"     INPUTS:")
-        print(f"        population: {self.population_input}")
-        print(f"        metalic_elm: {self.metalic_elm_input}")
-        print(f"        timber: {self.timber_input}")
-        print(f"        metalic_alloy: {self.metalic_alloys_input}")
-        print(f"     OUTPUTS:")
-        print(f"        housing: {self.housing_output}")
-        print(f"        housing_waste: {self.housing_waste__output}")
-        print(f"        population: {self.population_output}\n")
+        output_string = f"""
+        HOUSING TRANSFORM:
+             INPUTS:
+                population: {self.population_input}
+                metalic_elm: {self.metalic_elm_input}
+                timber: {self.timber_input}
+                metalic_alloy: {self.metalic_alloys_input}
+             OUTPUTS:
+                housing: {self.housing_output}
+                housing_waste: {self.housing_waste__output}
+                population: {self.population_output}\n
+        """
+        
+        print(output_string)
+        return output_string
+        
     
 @dataclass 
 class AlloyTransform:
@@ -103,14 +109,20 @@ class AlloyTransform:
             None
         """
         
-        print("ALLOY TRANSFORM:")
-        print(f"     INPUTS:")
-        print(f"        population: {self.population_input}")
-        print(f"        metalic_elm: {self.metalic_elm_input}")
-        print(f"     OUTPUTS:")
-        print(f"        metalic_alloy: {self.metalic_alloy_output}")
-        print(f"        metalic_alloy_waste: {self.metalic_alloy_waste_ouptut}")
-        print(f"        population: {self.population_output}\n")
+        output_string = f"""
+        ALLOY TRANSFORM:
+             INPUTS:
+                population: {self.population_input}
+                metalic_elm: {self.metalic_elm_input}
+             OUTPUTS:
+                metalic_alloy: {self.metalic_alloy_output}
+                metalic_alloy_waste: {self.metalic_alloy_waste_ouptut}
+                population: {self.population_output}\n
+        """
+        
+        print(output_string)
+        return output_string
+        
         
 @dataclass
 class ElectronicTransform:
@@ -157,15 +169,20 @@ class ElectronicTransform:
             None
         """
         
-        print("ELECTRONIC TRANSFORM:")
-        print(f"     INPUTS:")
-        print(f"        population: {self.population_input}")
-        print(f"        metalic_elm: {self.metalic_elm_input}")
-        print(f"        metalic_allot: {self.metalic_alloy_input}")
-        print(f"     OUTPUTS:")
-        print(f"        electronics: {self.electronics_output}")
-        print(f"        electronics_waste: {self.electronics_waste_output}")
-        print(f"        population: {self.population_output}\n")
+        output_string = f"""
+        ELECTRONIC TRANSFORM:
+             INPUTS:
+                population: {self.population_input}
+                metalic_elm: {self.metalic_elm_input}
+                metalic_allot: {self.metalic_alloy_input}
+             OUTPUTS:
+                electronics: {self.electronics_output}
+                electronics_waste: {self.electronics_waste_output}
+                population: {self.population_output}\n
+        """
+        print(output_string)
+        return output_string
+        
 
 @dataclass
 class FoodTransform:
@@ -209,15 +226,18 @@ class FoodTransform:
         Returns:
             None
         """
-        
-        print("FOOD TRANSFORM:")
-        print(f"     INPUTS:")
-        print(f"        water: {self.water_input}")
-        print(f"        farm: {self.farm_input}")
-        print(f"     OUTPUTS:")
-        print(f"        food: {self.food_output}")
-        print(f"        farm: {self.farm_output}")
-        print(f"        food_waste: {self.food_waste_output}\n")
+        output_string = f"""
+        FOOD TRANSFORM:
+            INPUTS:
+                water: {self.water_input}
+                farm: {self.farm_input}
+            OUTPUTS:
+                food: {self.food_output}
+                farm: {self.farm_output}
+                food_waste: {self.food_waste_output}\n
+        """
+        print(output_string)
+        return output_string
 
 @dataclass
 class FarmTransform:
@@ -263,11 +283,17 @@ class FarmTransform:
             None
         """
         
-        print("FARM TRANSFORM:")
-        print(f"     INPUTS:")
-        print(f"        water: {self.water_input}")
-        print(f"        timber: {self.timber_input}")
-        print(f"        available_land: {self.available_land_input}")
-        print(f"     OUTPUTS:")
-        print(f"        farm: {self.farm_output}")
-        print(f"        farm_waste: {self.farm_waste_output}\n")
+        output_string = f"""
+        FARM TRANSFORM:
+             INPUTS:
+                water: {self.water_input}
+                timber: {self.timber_input}
+                available_land: {self.available_land_input}
+             OUTPUTS:
+                farm: {self.farm_output}
+                farm_waste: {self.farm_waste_output}\n
+        """
+        
+        print(output_string)
+        return output_string
+        

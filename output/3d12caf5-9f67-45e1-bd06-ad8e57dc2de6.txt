@@ -1,0 +1,28 @@
+Expected Utility for Total Solution: 16119.51
+Expected Utility for This Action: -24.299804486718546
+        TRANSFER:
+            OTHER   -   SELF
+            Dinotopia -   Erewhon
+            water  -   available_land
+            43    -   43
+            43  -   85
+
+        Expected Utility for This Action: -19.531648623411016
+        TRANSFER:
+            OTHER   -   SELF
+            Dinotopia -   Erewhon
+            water  -   available_land
+            43    -   43
+            43  -   85
+
+        Expected Utility for This Action: 16119.514053220837
+        FARM TRANSFORM:
+             INPUTS:
+                water: 3400
+                timber: 1700
+                available_land: 3400
+             OUTPUTS:
+                farm: 1700
+                farm_waste: 340
+
+        

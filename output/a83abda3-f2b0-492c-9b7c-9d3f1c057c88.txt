@@ -1,0 +1,10 @@
+Expected Utility for Total Solution: -2.7
+Expected Utility for This Action: -2.6951258509044154
+        TRANSFER:
+            OTHER   -   SELF
+            Dinotopia -   Erewhon
+            metalic_elm  -   water
+            8    -   8
+            8  -   4
+
+        

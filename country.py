@@ -63,9 +63,9 @@ class Country:
     housing_waste: int = 0
     farm_waste: int = 0
     food_waste: int = 0
-    
-   
         
+        
+            
     def state_value(self) -> float:
         """Returns the base value of a state. Calculated
         as a weighted sum of the resources, developement and waste
@@ -96,7 +96,7 @@ class Country:
             (self.weights['farm_waste'] * self.farm_waste) + 
             (self.weights['food_waste'] * self.food_waste)
             )
-        
+
         return round(resource_score + 10*developement_score - waste_score, 2)            # make this more complex at some point
     
     def make_trade(self, resource: str, amount: int):

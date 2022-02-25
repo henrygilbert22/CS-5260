@@ -1,0 +1,20 @@
+Expected Utility for Total Solution: 26421.34
+Expected Utility for This Action: -0.9883868405863039
+        TRANSFER:
+            OTHER   -   SELF
+            Brobdingnag -   Erewhon
+            available_land  -   timber
+            1    -   1
+            1  -   1
+
+        Expected Utility for This Action: 26421.339262620957
+        FARM TRANSFORM:
+             INPUTS:
+                water: 3390
+                timber: 1695
+                available_land: 3390
+             OUTPUTS:
+                farm: 1695
+                farm_waste: 339
+
+        
