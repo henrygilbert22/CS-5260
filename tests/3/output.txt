@@ -113,4 +113,43 @@ Expected Utility for This Action: -40.3577679112646
                 farm: 1700
                 farm_waste: 340
 
+        Expected Utility for Total Solution: 1042.6
+Expected Utility for This Action: -40.3577679112646
+        TRANSFER:
+            OTHER   -   SELF
+            Atlantis -   Erewhon
+            water  -   available_land
+            43  -   85
+
+        Expected Utility for This Action: 768.7460682959568
+        ALLOY TRANSFORM:
+             INPUTS:
+                population: 70
+                metalic_elm: 140
+             OUTPUTS:
+                metalic_alloy: 70
+                metalic_alloy_waste: 70
+                population: 70
+
+        Expected Utility for This Action: 613.6544386287145
+        ALLOY TRANSFORM:
+             INPUTS:
+                population: 70
+                metalic_elm: 140
+             OUTPUTS:
+                metalic_alloy: 70
+                metalic_alloy_waste: 70
+                population: 70
+
+        Expected Utility for This Action: 1042.602185076096
+        ELECTRONIC TRANSFORM:
+             INPUTS:
+                population: 70
+                metalic_elm: 210
+                metalic_allot: 140
+             OUTPUTS:
+                electronics: 140
+                electronics_waste: 70
+                population: 70
+
         
