@@ -1,0 +1,263 @@
+Expected Utility for Total Solution: 19696.3
+Expected Utility for This Action: 125.44
+        ALLOY TRANSFORM:
+             INPUTS:
+                population: 70
+                metalic_elm: 140
+             OUTPUTS:
+                metalic_alloy: 70
+                metalic_alloy_waste: 70
+                population: 70
+
+        Expected Utility for This Action: 3776.922
+        FARM TRANSFORM:
+             INPUTS:
+                water: 3400
+                timber: 1700
+                available_land: 3400
+             OUTPUTS:
+                farm: 1700
+                farm_waste: 340
+
+        Expected Utility for This Action: 23341.293412890704
+        TRANSFER:
+            OTHER   -   SELF
+            Atlantis -   Erewhon
+            available_land  -   metalic_elm
+            4  -   4
+
+        Expected Utility for This Action: 19696.300104165653
+        FOOD TRANSFORM:
+            INPUTS:
+                water: 850
+                farm: 425
+            OUTPUTS:
+                food: 85
+                farm: 425
+                food_waste: 42
+
+        Expected Utility for Total Solution: 18176.2
+Expected Utility for This Action: -40.3577679112646
+        TRANSFER:
+            OTHER   -   SELF
+            Atlantis -   Erewhon
+            water  -   available_land
+            43  -   85
+
+        Expected Utility for This Action: 768.7460682959568
+        ALLOY TRANSFORM:
+             INPUTS:
+                population: 70
+                metalic_elm: 140
+             OUTPUTS:
+                metalic_alloy: 70
+                metalic_alloy_waste: 70
+                population: 70
+
+        Expected Utility for This Action: 613.6544386287145
+        ALLOY TRANSFORM:
+             INPUTS:
+                population: 70
+                metalic_elm: 140
+             OUTPUTS:
+                metalic_alloy: 70
+                metalic_alloy_waste: 70
+                population: 70
+
+        Expected Utility for This Action: 18176.201217513804
+        FARM TRANSFORM:
+             INPUTS:
+                water: 3400
+                timber: 1700
+                available_land: 3400
+             OUTPUTS:
+                farm: 1700
+                farm_waste: 340
+
+        Expected Utility for Total Solution: 18176.2
+Expected Utility for This Action: -40.3577679112646
+        TRANSFER:
+            OTHER   -   SELF
+            Atlantis -   Erewhon
+            water  -   available_land
+            43  -   85
+
+        Expected Utility for This Action: 768.7460682959568
+        ALLOY TRANSFORM:
+             INPUTS:
+                population: 70
+                metalic_elm: 140
+             OUTPUTS:
+                metalic_alloy: 70
+                metalic_alloy_waste: 70
+                population: 70
+
+        Expected Utility for This Action: 613.6544386287145
+        ALLOY TRANSFORM:
+             INPUTS:
+                population: 70
+                metalic_elm: 140
+             OUTPUTS:
+                metalic_alloy: 70
+                metalic_alloy_waste: 70
+                population: 70
+
+        Expected Utility for This Action: 18176.201217513804
+        FARM TRANSFORM:
+             INPUTS:
+                water: 3400
+                timber: 1700
+                available_land: 3400
+             OUTPUTS:
+                farm: 1700
+                farm_waste: 340
+
+        Expected Utility for Total Solution: 18176.2
+Expected Utility for This Action: -8.705784098757162
+        TRANSFER:
+            OTHER   -   SELF
+            Atlantis -   Erewhon
+            available_land  -   metalic_elm
+            5  -   5
+
+        Expected Utility for This Action: 768.7460682959568
+        ALLOY TRANSFORM:
+             INPUTS:
+                population: 70
+                metalic_elm: 140
+             OUTPUTS:
+                metalic_alloy: 70
+                metalic_alloy_waste: 70
+                population: 70
+
+        Expected Utility for This Action: 613.6544386287145
+        ALLOY TRANSFORM:
+             INPUTS:
+                population: 70
+                metalic_elm: 140
+             OUTPUTS:
+                metalic_alloy: 70
+                metalic_alloy_waste: 70
+                population: 70
+
+        Expected Utility for This Action: 18176.201217513804
+        FARM TRANSFORM:
+             INPUTS:
+                water: 3400
+                timber: 1700
+                available_land: 3400
+             OUTPUTS:
+                farm: 1700
+                farm_waste: 340
+
+        Expected Utility for Total Solution: 18176.2
+Expected Utility for This Action: -40.75187220189884
+        TRANSFER:
+            OTHER   -   SELF
+            Atlantis -   Erewhon
+            available_land  -   water
+            85  -   43
+
+        Expected Utility for This Action: 768.7460682959568
+        ALLOY TRANSFORM:
+             INPUTS:
+                population: 70
+                metalic_elm: 140
+             OUTPUTS:
+                metalic_alloy: 70
+                metalic_alloy_waste: 70
+                population: 70
+
+        Expected Utility for This Action: 649.1006421804653
+        ELECTRONIC TRANSFORM:
+             INPUTS:
+                population: 35
+                metalic_elm: 105
+                metalic_allot: 70
+             OUTPUTS:
+                electronics: 70
+                electronics_waste: 35
+                population: 35
+
+        Expected Utility for This Action: 18176.201217513804
+        FARM TRANSFORM:
+             INPUTS:
+                water: 3400
+                timber: 1700
+                available_land: 3400
+             OUTPUTS:
+                farm: 1700
+                farm_waste: 340
+
+        Expected Utility for Total Solution: 9299.38
+Expected Utility for This Action: -14.640531063602307
+        TRANSFER:
+            OTHER   -   SELF
+            Atlantis -   Erewhon
+            water  -   metalic_elm
+            10  -   20
+
+        Expected Utility for This Action: -28.59951800978488
+        TRANSFER:
+            OTHER   -   SELF
+            Dinotopia -   Erewhon
+            water  -   available_land
+            43  -   85
+
+        Expected Utility for This Action: -5.555114866641586
+        TRANSFER:
+            OTHER   -   SELF
+            Carpania -   Erewhon
+            metalic_elm  -   timber
+            1  -   1
+
+        Expected Utility for This Action: 9299.37649982541
+        FARM TRANSFORM:
+             INPUTS:
+                water: 3390
+                timber: 1695
+                available_land: 3390
+             OUTPUTS:
+                farm: 1695
+                farm_waste: 339
+
+        Expected Utility for Total Solution: 12735.1
+Expected Utility for This Action: -40.75187220189884
+        TRANSFER:
+            OTHER   -   SELF
+            Atlantis -   Erewhon
+            available_land  -   water
+            85  -   43
+
+        Expected Utility for This Action: 170.52666525361036
+        ALLOY TRANSFORM:
+             INPUTS:
+                population: 70
+                metalic_elm: 140
+             OUTPUTS:
+                metalic_alloy: 70
+                metalic_alloy_waste: 70
+                population: 70
+
+        Expected Utility for This Action: 232.56331712050726
+        ELECTRONIC TRANSFORM:
+             INPUTS:
+                population: 35
+                metalic_elm: 105
+                metalic_allot: 70
+             OUTPUTS:
+                electronics: 70
+                electronics_waste: 35
+                population: 35
+
+        Expected Utility for This Action: 12735.096923060943
+        FARM TRANSFORM:
+             INPUTS:
+                water: 3400
+                timber: 1700
+                available_land: 3400
+             OUTPUTS:
+                farm: 1700
+                farm_waste: 340
+
+        
