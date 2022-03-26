@@ -79,6 +79,34 @@ class Country:
         self.weights = weights
         self.max_water = water
 
+    def __getitem__(self, item):
+        """Base level function to treat
+        class of resource weights like a dictionary.
+        This helps make the access code much cleaner in the
+        simulation class
+
+        Args:
+            item (_type_): Attribute to access
+
+        Returns:
+            _type_: Attribute
+        """
+        return getattr(self, item) 
+    
+    def __setitem__(self, key, value):
+        """Base level function to treat
+        class of resource weights like a dictionary.
+        This helps make the access code much cleaner in the
+        simulation class
+
+        Args:
+            item (_type_): Attribute to access
+
+        Returns:
+            _type_: Attribute
+        """
+        setattr(self, key, value)
+
     def get_resource_dict(self):
 
         resources = {
@@ -143,7 +171,7 @@ class Country:
         
         return 1
 
-    def make_trade(self, resource: str, amount: int):
+    def make_trade(self, self_resource: str, self_amount: int, other_resource: str, other_amount: int):
         """Function to subtract resource for any
         given trade
 
@@ -156,28 +184,11 @@ class Country:
         """
         
         new_state = copy.deepcopy(self)
-        
-        if resource == 'metalic_elm':
-            new_state.metalic_elm -= amount
-        elif resource == 'timber':
-            new_state.timber -= amount
-        elif resource == 'metalic_alloys':
-            new_state.metalic_alloys -= amount
-        elif resource == 'electronics':
-            new_state.electronics -= amount
-        elif resource == 'housing':
-            new_state.housing -= amount
-        elif resource == 'available_land':
-            new_state.available_land -= amount
-        elif resource == 'water':
-            new_state.water -= amount
-        elif resource == 'farm':
-            new_state.farm -= amount
-        elif resource == 'food':
-            new_state.food -= amount
+
+        new_state[self_resource] = new_state[self_resource] - self_amount
+        new_state[other_resource] = new_state[other_resource] + other_amount
 
         new_state.adjust_continuals()
-        
         return new_state
     
     def can_farm_transform(self):
@@ -406,7 +417,6 @@ class Country:
 
         self.food -= self.population        #  Each population eats 1 food
         if self.food < 0: self.food = 0
-
 
     def housing_transform(self, scaler: int):
         """ Performs the given housing transformation.

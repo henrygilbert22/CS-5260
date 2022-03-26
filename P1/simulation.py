@@ -268,9 +268,9 @@ class Simulation:
                         self_elm_amount = ceil(max_amount / self_elm_scale)
 
                         trade = Transfer(elm, curr_elm, other_elm_amount, self_elm_amount, c, curr_state.name)
-                        new_curr_state = curr_state.make_trade(curr_elm, self_elm_amount)
+                        new_curr_state = curr_state.make_trade(curr_elm, self_elm_amount, elm, other_elm_amount)
                         new_countries = copy.deepcopy(curr_countries)
-                        new_countries[c] = curr_countries[c].make_trade(elm, other_elm_amount)
+                        new_countries[c] = curr_countries[c].make_trade(elm, other_elm_amount, curr_elm, self_elm_amount)
                         new_solution = copy.deepcopy(solution)
                         new_solution.path += [[trade, new_curr_state, new_countries]]
                         self.calculate_reward(new_solution)
