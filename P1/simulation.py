@@ -10,7 +10,7 @@ from more_itertools import chunked
 import math
 import os
 from typing import List
-import uuid
+import matplotlib.pyplot as plt
 
 from priority_queue import PriorityQueue, Solution
 from transforms import FarmTransform, FoodTransform, HousingTransform, AlloyTransform, ElectronicTransform
@@ -34,10 +34,11 @@ class Simulation:
     gamma: float
     state_reduction: int
     C: int
+    num_steps: int
 
     def __init__(self, countries_file_name: str, weights_file_name: str, 
                  country: int, depth: int, gamma: float, state_reduction: int, 
-                 max_frontier_size: int, solution_size: int, C: int) -> None:
+                 max_frontier_size: int, solution_size: int, C: int, num_steps: int) -> None:
         """Initialization function for Simulation class
 
         Args:
@@ -62,6 +63,7 @@ class Simulation:
         self.frontier = PriorityQueue(max_frontier_size)
         self.solutions = PriorityQueue(solution_size)
         self.C = C
+        self.num_steps = num_steps
 
         self.load()
 
@@ -172,7 +174,7 @@ class Simulation:
         for scaler in housing_scalers:
 
             trans = HousingTransform(scaler)
-            new_state = curr_state.housing_transform(scaler)
+            new_state = curr_state.transform("housing", scaler)
             new_solution = copy.deepcopy(solution)
             new_solution.path += [[trans, new_state, self.countries]]
             self.calculate_reward(new_solution)
@@ -181,7 +183,7 @@ class Simulation:
         for scaler in alloy_scalers:
 
             trans = AlloyTransform(scaler)
-            new_state = curr_state.alloys_transform(scaler)
+            new_state = curr_state.transform("alloys", scaler)
             new_solution = copy.deepcopy(solution)
             new_solution.path += [[trans, new_state, self.countries]]
             self.calculate_reward(new_solution)
@@ -190,7 +192,7 @@ class Simulation:
         for scaler in electronics_scalers:
 
             trans = ElectronicTransform(scaler)
-            new_state = curr_state.electronics_transform(scaler)
+            new_state = curr_state.transform("electronics", scaler)
             new_solution = copy.deepcopy(solution)
             new_solution.path += [[trans, new_state, self.countries]]
             self.calculate_reward(new_solution)
@@ -199,7 +201,7 @@ class Simulation:
         for scaler in food_scalers:
 
             trans = FoodTransform(scaler)
-            new_state = curr_state.food_transform(scaler)
+            new_state = curr_state.transform("food", scaler)
             new_solution = copy.deepcopy(solution)
             new_solution.path += [[trans, new_state, self.countries]]
             self.calculate_reward(new_solution)
@@ -208,7 +210,7 @@ class Simulation:
         for scaler in farm_scalers:
 
             trans = FarmTransform(scaler)
-            new_state = curr_state.farm_transform(scaler)
+            new_state = curr_state.transform("farm", scaler)
             new_solution = copy.deepcopy(solution)
             new_solution.path += [[trans, new_state, self.countries]]
             self.calculate_reward(new_solution)
@@ -319,6 +321,42 @@ class Simulation:
         self.generate_transform_succesors(solution)
         self.generate_transfer_succesors(solution)
 
+    def graph_resources(self, countries: list):
+        """Creates graph of resource progression for the
+        country in the list
+
+        Args:
+            countries (list): List of country states
+        
+        Returns:
+            None
+        """
+
+        fig = plt.figure()
+        ax = plt.subplot(111)
+
+
+        values = {}
+        for r in countries[0].get_resource_dict()[0]:
+            values[r] = []
+
+        for c in countries:
+
+            c_dict = c.get_resource_dict()[0]
+            for r in c_dict:
+                values[r].append(c_dict[r])
+        
+        for r in values:
+            ax.plot(values[r], label=r)
+        
+        box = ax.get_position()
+        ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+
+        # Put a legend to the right of the current axis
+        ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+        plt.savefig('graph.png')
+        plt.title('Resources')
+        
     def search(self):
         """ This is the generic anytime, forward searching, depth-bound,
         generic utility driven scheduler as outlined in the slides. Given a new state,
@@ -332,22 +370,37 @@ class Simulation:
             None
         """
 
-        total = 1
-        initial_solution = Solution(self.country.state_value(), [[None, self.country, self.countries, 0]])
-        self.frontier.push(initial_solution)
+        countries = []
+        for i in range(self.num_steps):
 
-        while not self.frontier.empty():
+            initial_solution = Solution(self.country.state_value(), [[None, self.country, self.countries, 0]])
+            self.frontier.push(initial_solution)
 
-            total += 1
-            solution = self.frontier.pop()
+            while not self.frontier.empty():
 
-            if len(solution.path) > self.depth:
-                self.solutions.push(solution)
-                continue
+                solution = self.frontier.pop()
 
-            self.generate_succesors(solution)
+                if len(solution.path) > self.depth:
+                    self.solutions.push(solution)
+                    continue
+
+                self.generate_succesors(solution)   
+
+            best_solution = self.solutions.queue[-1]
+           
+            print("chose this solution")
+            best_solution.print()
+
+            for s in best_solution.path:
+                countries.append(s[1])
+
+            self.country = best_solution.path[-1][1]
+            self.countries = best_solution.path[-1][2]
+            self.solutions.queue = []
+            self.frontier.queue = []
         
-        print(f'Total States: {total}')
+        self.graph_resources(countries)
+        return best_solution
 
     def search_parallel(self) -> None:
         """This function searches the possible state space in parallel,
@@ -579,7 +632,7 @@ def generate_transform_succesors_parallel(solution: Solution, countries: dict, s
     for scaler in housing_scalers:
 
         trans = HousingTransform(scaler)
-        new_state = curr_state.housing_transform(scaler)
+        new_state = curr_state.transform("housing", scaler)
         new_solution = copy.deepcopy(solution)
         new_solution.path += [[trans, new_state, countries]]
         calculate_reward_parallel(new_solution, countries, gamma, C)
@@ -588,7 +641,7 @@ def generate_transform_succesors_parallel(solution: Solution, countries: dict, s
     for scaler in alloy_scalers:
 
         trans = AlloyTransform(scaler)
-        new_state = curr_state.alloys_transform(scaler)
+        new_state = curr_state.transform("alloys", scaler)
         new_solution = copy.deepcopy(solution)
         new_solution.path += [[trans, new_state, countries]]
         calculate_reward_parallel(new_solution, countries, gamma, C)
@@ -597,7 +650,7 @@ def generate_transform_succesors_parallel(solution: Solution, countries: dict, s
     for scaler in electronics_scalers:
 
         trans = ElectronicTransform(scaler)
-        new_state = curr_state.electronics_transform(scaler)
+        new_state = curr_state.transform("electronics", scaler)
         new_solution = copy.deepcopy(solution)
         new_solution.path += [[trans, new_state, countries]]
         calculate_reward_parallel(new_solution, countries, gamma, C)
@@ -606,7 +659,7 @@ def generate_transform_succesors_parallel(solution: Solution, countries: dict, s
     for scaler in food_scalers:
 
         trans = FoodTransform(scaler)
-        new_state = curr_state.food_transform(scaler)
+        new_state = curr_state.transform("food", scaler)
         new_solution = copy.deepcopy(solution)
         new_solution.path += [[trans, new_state, countries]]
         calculate_reward_parallel(new_solution, countries, gamma, C)
@@ -615,7 +668,7 @@ def generate_transform_succesors_parallel(solution: Solution, countries: dict, s
     for scaler in farm_scalers:
 
         trans = FarmTransform(scaler)
-        new_state = curr_state.farm_transform(scaler)
+        new_state = curr_state.transform("farm", scaler)
         new_solution = copy.deepcopy(solution)
         new_solution.path += [[trans, new_state, countries]]
         calculate_reward_parallel(new_solution, countries, gamma, C)
@@ -661,150 +714,28 @@ def generate_succesors_parallel(chunk: List[Solution], countries: dict, shared_f
         generate_transfer_succesors_parallel(curr_solution, r_weights, countries, state_reduction, temp_frontier, gamma, C)
 
 
-def test_case_1():
-   
-    s = Simulation(
-        'tests/1/case_1_countries.xlsx',       # Countries file
-        'tests/1/case_1_weights.xlsx',        # Resources file
-        'Erewhon',                              # Self country
-        4,                                      # Depth
-        0.8,                                    # Gamma
-        -1,                                     # State Reduction (-1 for the most)
-        1000,                                   # Frontier size
-        3,                                      # Solution size
-        0.1                                     # C        
-    )
-
-    start = time.time()
-    s.search_parallel()     # need to reformat parallel as well
-    end = time.time()
-
-    print(f"Took: {end-start}")
-
-    best_solution = s.solutions.queue[-1]
-    best_solution.print(f'tests/1/output.txt')
-
-def test_case_2():
-   
-    s = Simulation(
-        'tests/2/case_2_countries.xlsx',       # Countries file
-        'tests/2/case_2_weights.xlsx',        # Resources file
-        'Erewhon',                              # Self country
-        4,                                      # Depth
-        0.8,                                    # Gamma
-        -1,                                     # State Reduction (-1 for the most)
-        1000,                                   # Frontier size
-        3,                                      # Solution size
-        -500                                     # C        
-    )
-
-    start = time.time()
-    s.search_parallel()     # need to reformat parallel as well
-    end = time.time()
-
-    print(f"Took: {end-start}")
-
-    best_solution = s.solutions.queue[-1]
-    best_solution.print(f'tests/2/output.txt')
-
-def test_case_3():
-   
-    s = Simulation(
-        'tests/3/case_3_countries.xlsx',       # Countries file
-        'tests/3/case_3_weights.xlsx',        # Resources file
-        'Erewhon',                              # Self country
-        4,                                      # Depth
-        0.8,                                    # Gamma
-        -1,                                     # State Reduction (-1 for the most)
-        1000,                                   # Frontier size
-        3,                                      # Solution size
-        1                                   # C        
-    )
-
-    start = time.time()
-    s.search_parallel()     # need to reformat parallel as well
-    end = time.time()
-
-    print(f"Took: {end-start}")
-
-    best_solution = s.solutions.queue[-1]
-    best_solution.print(f'tests/3/output.txt')
-    
-def test_case_4():
-   
-    s = Simulation(
-        'tests/4/case_4_countries.xlsx',       # Countries file
-        'tests/4/case_4_weights.xlsx',        # Resources file
-        'Erewhon',                              # Self country
-        4,                                      # Depth
-        0.8,                                    # Gamma
-        -1,                                     # State Reduction (-1 for the most)
-        1000,                                   # Frontier size
-        3,                                      # Solution size
-        1                                   # C        
-    )
-
-    start = time.time()
-    s.search_parallel()     # need to reformat parallel as well
-    end = time.time()
-
-    print(f"Took: {end-start}")
-
-    best_solution = s.solutions.queue[-1]
-    best_solution.print(f'tests/4/output.txt')
-
-def test_case_5():
-   
-    s = Simulation(
-        'tests/5/case_5_countries.xlsx',       # Countries file
-        'tests/5/case_5_weights.xlsx',        # Resources file
-        'Erewhon',                              # Self country
-        4,                                      # Depth
-        0.8,                                    # Gamma
-        -1,                                     # State Reduction (-1 for the most)
-        1000,                                   # Frontier size
-        3,                                      # Solution size
-        1                                   # C        
-    )
-
-    start = time.time()
-    s.search_parallel()     # need to reformat parallel as well
-    end = time.time()
-
-    print(f"Took: {end-start}")
-
-    best_solution = s.solutions.queue[-1]
-    best_solution.print(f'tests/5/output.txt')
-    
 def main():
-
-    id = str(uuid.uuid4())
-    os.system(f'cp Example-Initial-Countries.xlsx input/{id}.xlsx')
     
     s = Simulation(
         'Example-Initial-Countries.xlsx',       # Countries file
         'Example-Sample-Resources.xlsx',        # Resources file
         'Erewhon',                              # Self country
-        3,                                      # Depth
+        2,                                      # Depth
         0.8,                                    # Gamma
-        1,                                     # State Reduction (-1 for the most)
+        -1,                                      # State Reduction (-1 for the most)
         1000,                                   # Frontier size
         3,                                      # Solution size
-        0.1                                     # C        
+        0.1,                                    # C   
+        10                                      # Num steps     
     )
 
     start = time.time()
-    s.search()
+    best_solution = s.search()
     #s.search_parallel()     # need to reformat parallel as well
     end = time.time()
 
     print(f"Took: {end-start}")
-
-    best_solution = s.solutions.queue[-1]
-
-    best_solution.print(f'output/{id}.txt')
-    print(id)
-
+    best_solution.print()
 
 if __name__ == '__main__':
     main()
@@ -812,5 +743,5 @@ if __name__ == '__main__':
     #test_case_2()
     #test_case_3()
     #test_case_4()
-    test_case_5()
+    #test_case_5()
     

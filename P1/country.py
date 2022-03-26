@@ -63,9 +63,46 @@ class Country:
     housing_waste: int = 0
     farm_waste: int = 0
     food_waste: int = 0
+
+    max_water: int = 0
+    
+    def __init__(self, name: str, population: int, metalic_elm: int, timber: int, 
+                available_land: int, water: int, state_reduction: int, weights: ResourceWeights) -> None:
         
-        
-            
+        self.name = name
+        self.population = population
+        self.metalic_elm = metalic_elm
+        self.timber = timber
+        self.available_land = available_land
+        self.water = water
+        self.state_reduction = state_reduction
+        self.weights = weights
+        self.max_water = water
+
+    def get_resource_dict(self):
+
+        resources = {
+            'metalic_elm': self.metalic_elm,
+            'timber': self.timber,
+            'available_land': self.available_land,
+            'water': self.water,
+            'metalic_alloys': self.metalic_alloys,
+            'electronics': self.electronics,
+            'housing': self.housing,
+            'farm': self.farm,
+            'food': self.food,
+        }
+
+        waste = {
+            'metalic_waste': self.metalic_waste,
+            'electronics_waste': self.electronics_waste,
+            'housing_waste': self.housing_waste,
+            'farm_waste': self.farm_waste,
+            'food_waste': self.food_waste,
+        }
+
+        return resources, waste
+
     def state_value(self) -> float:
         """Returns the base value of a state. Calculated
         as a weighted sum of the resources, developement and waste
@@ -97,8 +134,15 @@ class Country:
             (self.weights['food_waste'] * self.food_waste)
             )
 
-        return round(resource_score + 10*developement_score - waste_score, 2)            # make this more complex at some point
+        return round((resource_score + 10*developement_score - waste_score)* self.food_availability_scaler(), 2)           # make this more complex at some point
     
+    def food_availability_scaler(self):
+
+        if self.food - self.population < 0:
+            return 0.5
+        
+        return 1
+
     def make_trade(self, resource: str, amount: int):
         """Function to subtract resource for any
         given trade
@@ -131,6 +175,8 @@ class Country:
             new_state.farm -= amount
         elif resource == 'food':
             new_state.food -= amount
+
+        new_state.adjust_continuals()
         
         return new_state
     
@@ -330,7 +376,38 @@ class Country:
         
         else:
             return []
+
+    def transform(self, type: str, scaler: int):
+
+        if type == "housing":
+            new_state = self.housing_transform(scaler)  
         
+        elif type == "food":
+            new_state = self.food_transform(scaler)
+        
+        elif type == "alloys":
+            new_state = self.alloys_transform(scaler)
+        
+        elif type == "electronics":
+            new_state = self.electronics_transform(scaler)
+        
+        elif type == "farm":
+            new_state = self.farm_transform(scaler)
+
+        new_state.adjust_continuals()
+        return new_state
+
+    def adjust_continuals(self):
+
+        if self.water + (self.max_water * 0.1) < self.max_water:     #increasing water by 10%
+            self.water += (self.max_water * 0.1)
+        else:
+            self.water = self.max_water
+
+        self.food -= self.population        #  Each population eats 1 food
+        if self.food < 0: self.food = 0
+
+
     def housing_transform(self, scaler: int):
         """ Performs the given housing transformation.
         The amount is dictated by the passed in scaler.
