@@ -660,30 +660,6 @@ def generate_succesors_parallel(chunk: List[Solution], countries: dict, shared_f
         generate_transform_succesors_parallel(curr_solution, countries, temp_frontier, gamma, C)
         generate_transfer_succesors_parallel(curr_solution, r_weights, countries, state_reduction, temp_frontier, gamma, C)
 
-"""
-    Paralization Metrics
-        2 - 0.8 - 10 - 10000: 2.66s
-        3 - 0.8 - 10 - 1000: 59.57s
-            total: 176032 - 0.00034 per state
-        3 - 0.8 - 10 - 1000: 32.02s - less batching
-            total: 99427 - 0.00032 per state
-        
-    
-    Sequential Metrics
-        2 - 0.8 - 10 - 10000: 1.82s
-        3 - 0.8 - 10 - 1000: 11s
-            total: 22418 - 0.00049 per state
-"""
-
-
-# With depth of 1, country 4 took 0.0017349720001220703 - 70 solutions
-# With depth of 2, country 4 took 0.6941020488739014 - 4900 solutions
-# Time scale = 400x longer for each depth
-# State space scale = 70x more states
-# Depth of 3, country 4 took 2756.87561917305 - 343000 solutions
-# Time scale = 3900x longer
-# State space scale = 70x
-
 
 def test_case_1():
    
@@ -831,7 +807,7 @@ def main():
 
 
 if __name__ == '__main__':
-    #main()
+    main()
     #test_case_1()
     #test_case_2()
     #test_case_3()
