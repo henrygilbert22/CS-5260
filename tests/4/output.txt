@@ -260,4 +260,33 @@ Expected Utility for This Action: -40.75187220189884
                 farm: 1700
                 farm_waste: 340
 
+        Expected Utility for Total Solution: -4.71
+Expected Utility for This Action: -5.039664093522874
+        TRANSFER:
+            OTHER   -   SELF
+            Dinotopia -   Erewhon
+            metalic_elm  -   timber
+            2  -   2
+
+        Expected Utility for This Action: -23.564223654418807
+        TRANSFER:
+            OTHER   -   SELF
+            Dinotopia -   Erewhon
+            water  -   available_land
+            43  -   85
+
+        Expected Utility for This Action: -19.744218324849438
+        TRANSFER:
+            OTHER   -   SELF
+            Dinotopia -   Erewhon
+            water  -   available_land
+            43  -   85
+
+        Expected Utility for This Action: -4.71247620242868
+        TRANSFER:
+            OTHER   -   SELF
+            Carpania -   Erewhon
+            metalic_elm  -   timber
+            1  -   1
+
         

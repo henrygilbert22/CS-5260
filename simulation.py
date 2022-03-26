@@ -776,6 +776,29 @@ def test_case_4():
 
     best_solution = s.solutions.queue[-1]
     best_solution.print(f'tests/4/output.txt')
+
+def test_case_5():
+   
+    s = Simulation(
+        'tests/5/case_5_countries.xlsx',       # Countries file
+        'tests/5/case_5_weights.xlsx',        # Resources file
+        'Erewhon',                              # Self country
+        4,                                      # Depth
+        0.8,                                    # Gamma
+        -1,                                     # State Reduction (-1 for the most)
+        1000,                                   # Frontier size
+        3,                                      # Solution size
+        1                                   # C        
+    )
+
+    start = time.time()
+    s.search_parallel()     # need to reformat parallel as well
+    end = time.time()
+
+    print(f"Took: {end-start}")
+
+    best_solution = s.solutions.queue[-1]
+    best_solution.print(f'tests/5/output.txt')
     
 def main():
 
@@ -812,5 +835,6 @@ if __name__ == '__main__':
     #test_case_1()
     #test_case_2()
     #test_case_3()
-    test_case_4()
+    #test_case_4()
+    test_case_5()
     
