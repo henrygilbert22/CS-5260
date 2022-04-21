@@ -17,8 +17,9 @@ class Model():
         
         self.strategy = tf.distribute.MirroredStrategy()
 
-        self.model = self.create_agent(state_shape, action_shape)
-        self.target_model = self.create_agent(state_shape, action_shape)
+        with self.strategy.scope():
+            self.model = self.create_agent(state_shape, action_shape)
+            self.target_model = self.create_agent(state_shape, action_shape)
 
     def create_agent(self, state_shape: int, action_shape: int) -> object:
         """ Takes the current state shape and the action space shape
@@ -43,14 +44,12 @@ class Model():
             None
         """
 
-        with self.strategy.scope():
-
-            model = keras.Sequential()      
-            model.add(keras.layers.Dense(10, input_shape=(state_shape,), activation='relu'))     
-            model.add(keras.layers.Dense(10, activation='relu'))
-            model.add(keras.layers.Dense(action_shape, activation='softmax'))
-            model.compile(loss=tf.keras.losses.CategoricalCrossentropy(), optimizer=tf.keras.optimizers.Adam(), metrics=['accuracy'], run_eagerly=True)
-            return model
+        model = keras.Sequential()      
+        model.add(keras.layers.Dense(10, input_shape=(state_shape,), activation='relu'))      #Maybe this is copying over the weights
+        model.add(keras.layers.Dense(10, activation='relu'))
+        model.add(keras.layers.Dense(action_shape, activation='softmax'))
+        model.compile(loss=tf.keras.losses.CategoricalCrossentropy(), optimizer=tf.keras.optimizers.Adam(), metrics=['accuracy'])
+        return model
 
 
     def train(self, replay_memory: deque, done: bool) -> None:
@@ -106,12 +105,13 @@ class Model():
             X.append(observation)           # Creating model input based off this
             Y.append(current_qs)            #
         
+        print(len(X))
         train_data = tf.data.Dataset.from_tensor_slices((X, Y))
-        train_data = train_data.batch(64, drop_remainder=True)
+        train_data = train_data.batch(8, drop_remainder=True)
         options = tf.data.Options()
         options.experimental_distribute.auto_shard_policy = tf.data.experimental.AutoShardPolicy.OFF
 
-        history = self.model.fit(train_data, batch_size=64, verbose=2, shuffle=True, epochs=100)      
+        history = self.model.fit(train_data, batch_size=8, verbose=2, shuffle=True, epochs=2)      
         return history.history['loss'][-1], history.history['accuracy'][-1]
     
     def update_target(self):

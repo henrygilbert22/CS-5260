@@ -107,11 +107,11 @@ class Model():
             Y.append(current_qs)            #
         
         train_data = tf.data.Dataset.from_tensor_slices((X, Y))
-        train_data = train_data.batch(64, drop_remainder=True)
+        train_data = train_data.batch(8, drop_remainder=True)
         options = tf.data.Options()
         options.experimental_distribute.auto_shard_policy = tf.data.experimental.AutoShardPolicy.OFF
 
-        history = self.model.fit(train_data, batch_size=64, verbose=2, shuffle=True, epochs=100)      
+        history = self.model.fit(train_data, batch_size=8, verbose=2, shuffle=True, epochs=2)      
         return history.history['loss'][-1], history.history['accuracy'][-1]
     
     def update_target(self):

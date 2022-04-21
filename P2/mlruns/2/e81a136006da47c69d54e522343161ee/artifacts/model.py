@@ -15,10 +15,11 @@ class Model():
         for gpu in physical_devices:
             tf.config.experimental.set_memory_growth(gpu, True)
         
-        self.strategy = tf.distribute.MirroredStrategy()
+        self.strategy = tf.distribute.MirroredStrategy(["GPU:0", "GPU:1"])
 
-        self.model = self.create_agent(state_shape, action_shape)
-        self.target_model = self.create_agent(state_shape, action_shape)
+        with self.strategy.scope():
+            self.model = self.create_agent(state_shape, action_shape)
+            self.target_model = self.create_agent(state_shape, action_shape)
 
     def create_agent(self, state_shape: int, action_shape: int) -> object:
         """ Takes the current state shape and the action space shape
@@ -43,14 +44,14 @@ class Model():
             None
         """
 
-        with self.strategy.scope():
-
-            model = keras.Sequential()      
-            model.add(keras.layers.Dense(10, input_shape=(state_shape,), activation='relu'))     
-            model.add(keras.layers.Dense(10, activation='relu'))
-            model.add(keras.layers.Dense(action_shape, activation='softmax'))
-            model.compile(loss=tf.keras.losses.CategoricalCrossentropy(), optimizer=tf.keras.optimizers.Adam(), metrics=['accuracy'], run_eagerly=True)
-            return model
+        learning_rate = 0.001       #Exploration rate
+        init = tf.keras.initializers.HeUniform()        
+        model = keras.Sequential()      
+        model.add(keras.layers.Dense(10, input_shape=(state_shape,), activation='relu', kernel_initializer=init))      #Maybe this is copying over the weights
+        model.add(keras.layers.Dense(10, activation='relu', kernel_initializer=init))
+        model.add(keras.layers.Dense(action_shape, activation='softmax', kernel_initializer=init))
+        model.compile(loss=tf.keras.losses.CategoricalCrossentropy(), optimizer=tf.keras.optimizers.Adam(learning_rate=learning_rate), metrics=['accuracy'])
+        return model
 
 
     def train(self, replay_memory: deque, done: bool) -> None:
@@ -107,12 +108,13 @@ class Model():
             Y.append(current_qs)            #
         
         train_data = tf.data.Dataset.from_tensor_slices((X, Y))
-        train_data = train_data.batch(64, drop_remainder=True)
+        train_data = train_data.batch(32, drop_remainder=True)
         options = tf.data.Options()
         options.experimental_distribute.auto_shard_policy = tf.data.experimental.AutoShardPolicy.OFF
 
-        history = self.model.fit(train_data, batch_size=64, verbose=2, shuffle=True, epochs=100)      
+        history = self.model.fit(train_data, batch_size=32, verbose=2, shuffle=True)      
         return history.history['loss'][-1], history.history['accuracy'][-1]
     
     def update_target(self):
+        
         self.target_model.set_weights(self.model.get_weights())
