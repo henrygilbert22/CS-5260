@@ -64,6 +64,7 @@ class Country:
     food_waste: int = 0
 
     max_water: int = 0
+    max_timber: int = 0
     
     def __init__(self, name: str, population: int, metalic_elm: int, timber: int, 
                 available_land: int, water: int, weights: ResourceWeights) -> None:
@@ -75,7 +76,9 @@ class Country:
         self.available_land = available_land
         self.water = water
         self.weights = weights
+        
         self.max_water = water
+        self.max_timber = timber
 
     def __getitem__(self, item):
         """Base level function to treat
@@ -217,8 +220,13 @@ class Country:
         else:
             self.water = self.max_water
 
-        self.food -= self.population        #  Each population eats 1 food
+        self.food -= int(0.1*self.population)        #  Each population eats .1 food
         if self.food < 0: self.food = 0
+
+        if self.timber + (self.max_timber * 0.1) < self.max_timber:     #increasing timber by 10% of current timber Can't grow more timber than you gave away
+            self.timber += (self.max_timber * 0.1)
+        else:
+            self.timber = self.max_timber
 
     def housing_transform(self):
         """ Performs the given housing transformation.
