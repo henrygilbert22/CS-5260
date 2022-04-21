@@ -85,7 +85,7 @@ class Model():
         if len(replay_memory) < MIN_REPLAY_SIZE:        # Only do this function when we've gone through atleast 1000 steps?
             return 0, 0
 
-        data_set_size = 256     # Getting random 128 batch sample from 
+        data_set_size = 128     # Getting random 128 batch sample from 
         mini_batch = random.sample(replay_memory, data_set_size)       # Grabbing said random sample
         current_states = np.array([transition[0] for transition in mini_batch])     # Getting all the states from your sampled mini batch, because index 0 is the observation
         current_qs_list = self.model.predict(current_states)     # Predict the q values based on all the historical state
@@ -112,8 +112,9 @@ class Model():
         train_data = train_data.batch(4, drop_remainder=True)
         options = tf.data.Options()
         options.experimental_distribute.auto_shard_policy = tf.data.experimental.AutoShardPolicy.OFF
+        train_data = train_data.with_options(options).prefetch(tf.data.AUTOTUNE)
 
-        history = self.model.fit(train_data, batch_size=8, verbose=2, shuffle=True)      
+        history = self.model.fit(train_data, batch_size=4, verbose=2, shuffle=True)      
         return history.history['loss'][-1], history.history['accuracy'][-1]
     
     def update_target(self):
