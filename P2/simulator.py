@@ -26,11 +26,13 @@ class Simulator:
         if notes != "x":
             
             self.log = True
-            mlflow.set_experiment('Deep Q Learning')
+            mlflow.set_tracking_uri("http://10.0.0.206:5000")
+            mlflow.set_experiment('Deep-Q-Learning')
             mlflow.start_run(run_name="Henry G") 
             mlflow.tensorflow.autolog() 
             MlflowClient().set_tag(mlflow.active_run().info.run_id, "mlflow.note.content", notes)
-            mlflow.log_artifact(f'P2')
+            
+            mlflow.log_artifact(f'.')
 
     def graph_performance(self, results: list, averages: list, actions):
 
@@ -64,9 +66,7 @@ class Simulator:
         max_epsilon = 1 # You can't explore more than 100% of the time - Makes sense
         min_epsilon = 0.01 # At a minimum, we'll always explore 1% of the time - Optimize somehow?
         episode = 0
-        replay_memory = deque(maxlen=1000)
-        rewards = []
-        averages = []
+        replay_memory = deque(maxlen=10_000)
         actions = []
 
         for i in tqdm(range(1000)):
@@ -100,7 +100,7 @@ class Simulator:
                 replay_memory.append([current_state, action, reward, new_state, done])      # Adding everything to the replay memory
                 total_reward += reward
 
-                if steps_to_update_target_model % 5 == 0 or done:                   # If we've done 4 steps or have lost/won, update the main neural net, not target
+                if steps_to_update_target_model % 20 == 0 or done:                   # If we've done 4 steps or have lost/won, update the main neural net, not target
                     self.model.train(replay_memory, done)            # training the main model
                         
             print(f'Made it to: {total_reward} - {epsilon}')
