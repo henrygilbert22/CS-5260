@@ -8,8 +8,6 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 import mlflow
 from mlflow.tracking import MlflowClient
-import silence_tensorflow.auto
-import atexit
 
 class Simulator:
 
@@ -29,7 +27,6 @@ class Simulator:
         notes = 'test'
         if notes != "x":
             
-            print("in here")
             self.log = True
             mlflow.set_tracking_uri("http://10.0.0.206:5000")
             mlflow.set_experiment('Deep-Q-Learning')
@@ -118,7 +115,7 @@ class Simulator:
             mlflow.log_metric("epsilon", epsilon)
 
             episode += 1
-            epsilon = min_epsilon + (max_epsilon - min_epsilon) * np.exp(-0.05 * episode)
+            epsilon = min_epsilon + (max_epsilon - min_epsilon) * np.exp(-0.01 * episode)
             self.model.update_target()
             
             
@@ -126,8 +123,6 @@ def main():
 
     s = Simulator()
     s.simulate()
-
-    atexit.register(s.strategy._extended._collective_ops._pool.close) # type: ignore
 
 if __name__ == '__main__':
     main()
