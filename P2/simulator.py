@@ -3,11 +3,11 @@ from environment import Environment
 from model import Model
 
 from collections import deque
-import tensorflow as tf
 import numpy as np
-from tensorflow import keras
 from tqdm import tqdm
 import matplotlib.pyplot as plt
+import mlflow
+from mlflow.tracking import MlflowClient
 
 class Simulator:
 
@@ -18,6 +18,19 @@ class Simulator:
         
         self.env = Environment()
         self.model = Model(15,7)
+
+    def configure_mlflow(self):
+
+        #notes = input("Enter a note: ")
+        notes = 'test'
+        if notes != "x":
+            
+            self.log = True
+            mlflow.set_experiment('Deep Q Learning')
+            mlflow.start_run(run_name="Henry G") 
+            mlflow.tensorflow.autolog() 
+            MlflowClient().set_tag(mlflow.active_run().info.run_id, "mlflow.note.content", notes)
+            mlflow.log_artifact(f'P2')
 
     def graph_performance(self, results: list, averages: list, actions):
 
@@ -87,21 +100,17 @@ class Simulator:
                 replay_memory.append([current_state, action, reward, new_state, done])      # Adding everything to the replay memory
                 total_reward += reward
 
-                if steps_to_update_target_model % 5 == 0 or done:                   # If we've done 4 steps or have lost/won, updat the main neural net, not target
+                if steps_to_update_target_model % 5 == 0 or done:                   # If we've done 4 steps or have lost/won, update the main neural net, not target
                     self.model.train(replay_memory, done)            # training the main model
                         
             print(f'Made it to: {total_reward} - {epsilon}')
+            mlflow.log_metric("reward", total_reward)
+            mlflow.log_metric("epsilon", epsilon)
+
             episode += 1
             epsilon = min_epsilon + (max_epsilon - min_epsilon) * np.exp(-0.01 * episode)
             self.model.update_target()
-            rewards.append(total_reward)
-            print(f'Average reward: {np.mean(rewards[-50:])}')  # Average of last 50 rewards
-            averages.append(np.mean(rewards[-50:]))
-
-            if i % 100 == 0:
-                self.graph_performance(rewards, averages, actions)
-
-        self.graph_performance(rewards, averages, actions)
+            
             
 def main():
 

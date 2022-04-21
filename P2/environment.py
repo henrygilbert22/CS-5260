@@ -136,7 +136,7 @@ class Environment:
         
         self.step_counter += 1
 
-        if self.step_counter >= 10:
+        if self.step_counter >= 100:
             return self.curr_state_value() - previous_value, True
         else:
             return self.curr_state_value() - previous_value, False

@@ -40,8 +40,8 @@ class Model():
         learning_rate = 0.001       #Exploration rate
         init = tf.keras.initializers.HeUniform()        
         model = keras.Sequential()      
-        model.add(keras.layers.Dense(200, input_shape=(state_shape,), activation='relu', kernel_initializer=init))      #Maybe this is copying over the weights
-        model.add(keras.layers.Dense(200, activation='relu', kernel_initializer=init))
+        model.add(keras.layers.Dense(10, input_shape=(state_shape,), activation='relu', kernel_initializer=init))      #Maybe this is copying over the weights
+        model.add(keras.layers.Dense(10, activation='relu', kernel_initializer=init))
         model.add(keras.layers.Dense(action_shape, activation='softmax', kernel_initializer=init))
         model.compile(loss=tf.keras.losses.CategoricalCrossentropy(), optimizer=tf.keras.optimizers.Adam(learning_rate=learning_rate), metrics=['accuracy'])
         return model
@@ -77,8 +77,8 @@ class Model():
         if len(replay_memory) < MIN_REPLAY_SIZE:        # Only do this function when we've gone through atleast 1000 steps?
             return
 
-        batch_size = 64 * 2     # Getting random 128 batch sample from 
-        mini_batch = random.sample(replay_memory, batch_size)       # Grabbing said random sample
+        data_set_size = 128     # Getting random 128 batch sample from 
+        mini_batch = random.sample(replay_memory, data_set_size)       # Grabbing said random sample
         current_states = np.array([transition[0] for transition in mini_batch])     # Getting all the states from your sampled mini batch, because index 0 is the observation
         current_qs_list = self.model.predict(current_states)     # Predict the q values based on all the historical state
         new_current_states = np.array([transition[3] for transition in mini_batch]) # Getting all of the states after we executed our action? 
@@ -87,6 +87,7 @@ class Model():
         X = []
         Y = []
         for index, (observation, action, reward, new_observation, done) in enumerate(mini_batch):       # Looping through our randomly sampled batch
+            
             if not done:                                                                                # If we havent finished the game or died?
                 max_future_q = reward + discount_factor * np.max(future_qs_list[index])                 # Calculuting max value for each step using the discount factor
             else:
@@ -99,7 +100,7 @@ class Model():
             X.append(observation)           # Creating model input based off this
             Y.append(current_qs)            #
         
-        self.model.fit(np.array(X), np.array(Y), batch_size=batch_size, verbose=0, shuffle=True)      
+        self.model.fit(np.array(X), np.array(Y), batch_size=4, verbose=1, shuffle=True)      
 
     
     def update_target(self):
