@@ -1,7 +1,6 @@
 from cProfile import label
 from environment import Environment
 from model import Model
-from P2.ddpg_model import DDPGModel
 
 from collections import deque
 import numpy as np
@@ -15,11 +14,13 @@ import atexit
 class Simulator:
 
     env: Environment
-    model: DDPGModel
+    model: Model
 
     def __init__(self) -> None:
         
         self.env = Environment()
+        self.model = Model(15,7)
+
         self.configure_mlflow()
 
     def configure_mlflow(self):
@@ -28,6 +29,7 @@ class Simulator:
         notes = 'test'
         if notes != "x":
             
+            print("in here")
             self.log = True
             mlflow.set_tracking_uri("http://10.0.0.206:5000")
             mlflow.set_experiment('Deep-Q-Learning')
@@ -56,66 +58,17 @@ class Simulator:
         plt.savefig(f'{title}_bar.png')
         mlflow.log_artifact(f'{title}_bar.png')
 
-    def ddpg_simulate(self):
-
-        self.model = DDPGModel(15, 7)
-
-        epsilon = 1 # Epsilon-greedy algorithm in initialized at 1 meaning every step is random at the start - This decreases over time
-        max_epsilon = 1 # You can't explore more than 100% of the time - Makes sense
-        min_epsilon = 0.01 # At a minimum, we'll always explore 1% of the time - Optimize somehow?
-        episode = 0
-        replay_memory = deque(maxlen=10000)
-        actions = []
-
-        for i in tqdm(range(1000)):
-            
-            done = False
-            self.env.reset()
-            total_reward = 0
-
-            while(not done):
-
-                random_number = np.random.rand()
-                current_state = self.env.current_state()
-
-                if random_number <= epsilon:  # Explore  
-                    action = self.env.random_action() # Just randomly choosing an action
-                
-                else: #Exploitting
-                    action = self.model.policy(current_state)
-                
-                actions.append(action)
-                reward, done = self.env.step(action)      # Executing action on current state and getting reward, this also increments out current state
-                new_state = self.env.current_state()               
-                total_reward += reward
-                
-                action_set = [0] * 7
-                action_set[action] = 1
-
-                replay_memory.append([current_state, action_set, reward, new_state])      # Adding everything to the replay memory
-                self.model.learn(replay_memory)
-
-            print(f'Made it to: {total_reward} - {epsilon}')
-            mlflow.log_metric("reward", total_reward)
-
-            episode += 1
-            epsilon = min_epsilon + (max_epsilon - min_epsilon) * np.exp(-0.01 * episode)
-
         
-        self.graph_action_distribution(actions, "training")
-
-    def DQN_simulate(self):
-
-        self.model = Model(15,7)
+    def simulate(self):
 
         epsilon = 1 # Epsilon-greedy algorithm in initialized at 1 meaning every step is random at the start - This decreases over time
         max_epsilon = 1 # You can't explore more than 100% of the time - Makes sense
         min_epsilon = 0.01 # At a minimum, we'll always explore 1% of the time - Optimize somehow?
         episode = 0
-        replay_memory = deque(maxlen=10000)
+        replay_memory = deque(maxlen=1000)
         actions = []
 
-        for i in tqdm(range(5000)):
+        for i in tqdm(range(50)):
             
             done = False
             steps_to_update_target_model = 0
@@ -156,9 +109,9 @@ class Simulator:
             mlflow.log_metric("epsilon", epsilon)
 
             episode += 1
-            epsilon = min_epsilon + (max_epsilon - min_epsilon) * np.exp(-0.01 * episode)
+            epsilon = min_epsilon + (max_epsilon - min_epsilon) * np.exp(-0.05 * episode)
 
-            if i % 10:
+            if i % 5:
                 self.model.update_target()
         
         self.graph_action_distribution(actions, "training")
@@ -200,8 +153,8 @@ class Simulator:
 def main():
 
     s = Simulator()
-    s.actor_critic_simulate()
-    #s.test()
+    s.simulate()
+    s.test()
 
 if __name__ == '__main__':
     main()

@@ -54,7 +54,7 @@ class Model():
             model.add(LSTM(40, return_sequences=True, activation='relu'))       
             model.add(LSTM(20, activation='relu'))  
             model.add(keras.layers.Dense(action_shape, activation='softmax'))
-            model.compile(loss=tf.keras.losses.CategoricalCrossentropy(), optimizer=tf.keras.optimizers.Adam(learning_rate=0.0001), metrics=['accuracy'], run_eagerly=True)
+            model.compile(loss=tf.keras.losses.CategoricalCrossentropy(), optimizer=tf.keras.optimizers.Adam(), metrics=['accuracy'], run_eagerly=True)
             return model
 
     def train(self, replay_memory: deque, done: bool) -> None:
@@ -83,7 +83,7 @@ class Model():
         learning_rate = 0.7         
         discount_factor = 0.618     
 
-        MIN_REPLAY_SIZE = 5000      
+        MIN_REPLAY_SIZE = 500      
         if len(replay_memory) < MIN_REPLAY_SIZE:        # Only do this function when we've gone through atleast 1000 steps?
             return 0, 0
 

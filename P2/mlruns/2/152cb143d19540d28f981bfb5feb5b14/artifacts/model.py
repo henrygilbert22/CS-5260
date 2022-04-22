@@ -83,7 +83,7 @@ class Model():
         learning_rate = 0.7         
         discount_factor = 0.618     
 
-        MIN_REPLAY_SIZE = 5000      
+        MIN_REPLAY_SIZE = 500      
         if len(replay_memory) < MIN_REPLAY_SIZE:        # Only do this function when we've gone through atleast 1000 steps?
             return 0, 0
 

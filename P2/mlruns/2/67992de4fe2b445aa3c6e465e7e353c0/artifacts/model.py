@@ -54,7 +54,7 @@ class Model():
             model.add(LSTM(40, return_sequences=True, activation='relu'))       
             model.add(LSTM(20, activation='relu'))  
             model.add(keras.layers.Dense(action_shape, activation='softmax'))
-            model.compile(loss=tf.keras.losses.CategoricalCrossentropy(), optimizer=tf.keras.optimizers.Adam(learning_rate=0.0001), metrics=['accuracy'], run_eagerly=True)
+            model.compile(loss=tf.keras.losses.CategoricalCrossentropy(), optimizer=tf.keras.optimizers.Adam(), metrics=['accuracy'], run_eagerly=True)
             return model
 
     def train(self, replay_memory: deque, done: bool) -> None:
@@ -83,7 +83,7 @@ class Model():
         learning_rate = 0.7         
         discount_factor = 0.618     
 
-        MIN_REPLAY_SIZE = 5000      
+        MIN_REPLAY_SIZE = 500      
         if len(replay_memory) < MIN_REPLAY_SIZE:        # Only do this function when we've gone through atleast 1000 steps?
             return 0, 0
 
@@ -98,6 +98,7 @@ class Model():
         new_current_states = np.array(new_current_states).reshape([len(new_current_states), 5, 15])
         future_qs_list = self.target_model(new_current_states).numpy()       # the q values resulting in our action
 
+        max_reward = np.array([transition[2] for transition in mini_batch]).max()       # Getting all the rewards from the mini batch
         X = []
         Y = []
 
@@ -120,7 +121,7 @@ class Model():
         options.experimental_distribute.auto_shard_policy = tf.data.experimental.AutoShardPolicy.OFF
         train_data = train_data.with_options(options)
 
-        history = self.model.fit(train_data, verbose=1, shuffle=False) 
+        history = self.model.fit(train_data, verbose=1, shuffle=False)  
         return history.history['loss'][-1], history.history['accuracy'][-1]
 
     def update_target(self):

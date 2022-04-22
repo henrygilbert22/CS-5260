@@ -148,18 +148,10 @@ class Environment:
         self.state_window.append(self.country.state())
 
         if self.step_counter >= 100:
-
-            if self.curr_state_value() > previous_value:
-                return 1, True
-            else:
-                return -1, True
+            return self.curr_state_value(), True
         
         else:
-
-            if self.curr_state_value() > previous_value:
-                return 1, False
-            else:
-                return -1, False
+            return self.curr_state_value(), False
     
     def curr_state_value(self):
 

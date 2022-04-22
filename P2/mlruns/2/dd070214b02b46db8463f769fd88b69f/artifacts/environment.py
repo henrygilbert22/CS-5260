@@ -150,16 +150,16 @@ class Environment:
         if self.step_counter >= 100:
 
             if self.curr_state_value() > previous_value:
-                return 1, True
+                return 1
             else:
-                return -1, True
+                return -1
         
         else:
 
             if self.curr_state_value() > previous_value:
-                return 1, False
+                return 1
             else:
-                return -1, False
+                return -1
     
     def curr_state_value(self):
 
