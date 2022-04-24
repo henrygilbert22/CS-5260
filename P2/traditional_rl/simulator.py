@@ -19,11 +19,27 @@ class Simulator:
     model: DDPGModel
 
     def __init__(self) -> None:
+        """ Initialize the simulator and configure the experimentation
+        
+        Arguments:
+            None
+            
+        Returns:   
+            None
+        """
         
         self.env = Environment()
         self.configure_mlflow()
 
     def configure_mlflow(self):
+        """ Configure the MLflow environment
+        
+        Arguments:
+            None
+            
+        Returns:
+            None
+        """
 
         #notes = input("Enter a note: ")
         notes = 'test'
@@ -41,6 +57,14 @@ class Simulator:
 
 
     def graph_action_distribution(self, actions: list, title: str):
+        """ Graph the action distribution
+
+        Arguments:
+            actions (list) -- List of actions taken
+        
+        Returns:
+            None
+        """
 
         data = {}
         for action in actions:
@@ -58,17 +82,25 @@ class Simulator:
         mlflow.log_artifact(f'{title}_bar.png')
 
     def ddpg_simulate(self):
+        """ Simulate the DDPG algorithm
+        
+        Arguments:
+            None
+            
+        Returns:
+            None
+        """
 
         self.model = DDPGModel(15, 7)
 
-        epsilon = 1 # Epsilon-greedy algorithm in initialized at 1 meaning every step is random at the start - This decreases over time
-        max_epsilon = 1 # You can't explore more than 100% of the time - Makes sense
-        min_epsilon = 0.01 # At a minimum, we'll always explore 1% of the time - Optimize somehow?
+        epsilon = 1 
+        max_epsilon = 1 
+        min_epsilon = 0.01 
         episode = 0
         replay_memory = deque(maxlen=10000)
         actions = []
 
-        for i in tqdm(range(1000)):
+        for i in tqdm(range(100)):
             
             done = False
             self.env.reset()
@@ -96,16 +128,21 @@ class Simulator:
                 replay_memory.append([current_state, action_set, reward, new_state])      # Adding everything to the replay memory
                 self.model.learn(replay_memory)
 
-            print(f'Made it to: {total_reward} - {epsilon}')
             mlflow.log_metric("reward", total_reward)
-
             episode += 1
             epsilon = min_epsilon + (max_epsilon - min_epsilon) * np.exp(-0.01 * episode)
 
-        
         self.graph_action_distribution(actions, "training")
 
     def DQN_simulate(self):
+        """ Simulate the DQN algorithm
+        
+        Arguments:
+            None
+            
+        Returns:   
+            None
+        """
 
         self.model = Model(15,7)
 
@@ -147,19 +184,21 @@ class Simulator:
                 total_reward += reward
 
                 if steps_to_update_target_model % 10 == 0 or done:                   # If we've done 4 steps or have lost/won, update the main neural net, not target
-                    loss, accuracy = self.model.train(replay_memory, done)            # training the main model
-                    # mlflow.log_metric("loss", loss)
-                    # mlflow.log_metric("accuracy", accuracy)
-
-            print(f'Made it to: {total_reward} - {epsilon}')
-            # mlflow.log_metric("reward", total_reward)
-            # mlflow.log_metric("epsilon", epsilon)
-
+                    self.model.train(replay_memory, done)            # training the main model
+ 
             episode += 1
             epsilon = min_epsilon + (max_epsilon - min_epsilon) * np.exp(-0.01 * episode)
             self.model.update_target()
         
-    def test(self, i: int):
+    def test(self):
+        """ Test a given model against the first 100
+
+        Arguments:
+            None
+            
+        Returns:
+            None
+        """
 
         self.env.reset()
         total_reward = 0
@@ -168,15 +207,23 @@ class Simulator:
         while(not done):
 
             current_state = self.env.current_state()
-                
-            action = self.model.predict(current_state)          # Predicting best action, not sure why flatten (pushing 2d into 1d)
-            reward, done = self.env.step(action)      # Executing action on current state and getting reward, this also increments out current state
+            action = self.model.predict(current_state)          
+            reward, done = self.env.step(action)      
             total_reward += reward
         
         return total_reward
     
 
 def run_test(i: int, results: list):
+    """ Run a test
+
+    Arguments:
+        i (int): The test number
+        results (list): The list of results
+
+    Returns:
+        None
+    """
 
     s = Simulator()
     s.DQN_simulate()
@@ -184,6 +231,14 @@ def run_test(i: int, results: list):
     results.append(reward)
 
 def test():
+    """ Test the simulator
+    
+    Arguments:
+        None
+        
+    Returns:
+        None
+    """
 
     pool = mp.Pool(10)
     results = mp.Manager().list()
@@ -198,7 +253,6 @@ def test():
         f.write(f'Made it to: {sum(results)/len(results)}')
 
 def main():
-
     test()
     
     
