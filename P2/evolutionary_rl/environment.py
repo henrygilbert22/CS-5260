@@ -118,6 +118,7 @@ class Environment:
         Returns:
             None
         """
+        
         external_biggest_resource = lambda interal_r, external_rs: external_rs[0] if external_rs[0] != interal_r else external_rs[1]
 
         tradeable_resources = {

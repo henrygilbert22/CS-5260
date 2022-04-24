@@ -19,25 +19,58 @@ class Environment:
     max_value: int
 
     def __init__(self) -> None:
-        
+        """ Initializes the environment, loads in the countries
+        and creates an empty state window with the base environment
+
+        Arguments:
+            None
+
+        Returns:
+            None
+        """
+
         self.load_weights('Example-Sample-Resources.xlsx')
         self.load_countries('Example-Initial-Countries.xlsx')
 
         [self.state_window.append(self.country.state()) for _ in range(5)]
 
     def reset(self):
+        """Resets the environment to the initial state
         
+        Arguements:
+            None
+            
+        Returns:
+            None
+        """
+
         self.load_weights('Example-Sample-Resources.xlsx')
         self.load_countries('Example-Initial-Countries.xlsx')
         self.step_counter = 0
         [self.state_window.append(self.country.state()) for _ in range(5)]
 
     def current_state(self):
+        """ returns the current state window for a given
+        country, normalized between 0 and 1
+
+        Arguments:
+            None
+
+        Returns:
+            current_state_window (list): list of the current state window
+        """
 
         return np.array(self.state_window)/self.max_value
 
     def random_action(self):
-
+        """ Randomly selects an action from the available actions
+        
+        Arguments:
+            None
+        
+        Returns:
+            action (int): Randomly selected action
+        """
         return random.randint(0, 6)
 
     def load_countries(self, file_name: str):
@@ -78,6 +111,17 @@ class Environment:
         self.weights = ResourceWeights(*args)
 
     def facilatate_trade(self):
+        """ Facilitates the trade between two countries, given 
+        the index of the country that is being facilatated. Automatically 
+        matches the best trade for state reduction, makes it 10% more favorable
+        for the country and gives it a 90% change of happening.
+        
+        Arguements:
+            country_index (int): index of the country that is being facilatated
+            
+        Returns:
+            None
+        """
 
         external_biggest_resource = lambda interal_r, external_rs: external_rs[0] if external_rs[0] != interal_r else external_rs[1]
 
@@ -124,6 +168,17 @@ class Environment:
             self.other_countries[best_country_to_trade].make_trade(countries_trade_resource[best_country_to_trade], other_elm_max, internal_biggest_resource, self_elm_max)
 
     def step(self, action: int):
+        """ Given a current countries index, and an action, 
+        computes the next state and reward for the country.
+
+        Arguements:
+            action (int): action to be taken
+            country_index (int): index of the country
+        
+        Returns:
+            reward (float): The reward for a given action
+            finished (bool): Whether the game is finished
+        """
         
         previous_value = self.curr_state_value()
         reward = lambda curr, previous: round(curr/previous, 2) if curr > previous else round(0.9 - previous/curr, 2)   #0.1 penalty for not making a gain

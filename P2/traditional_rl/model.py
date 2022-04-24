@@ -59,6 +59,14 @@ class Model():
             return model
 
     def predict(self, state: np.array) -> np.array:
+        """ Predict the action to take given the current state
+        
+        Arguments:
+            state (np.array): The current state
+            
+        Return:
+            action (np.array): The action to take
+        """
 
         current_reshaped = np.array(state).reshape([1, 5, 15])
         action = self.model(current_reshaped).numpy()[0] 
@@ -131,4 +139,13 @@ class Model():
         return history.history['loss'][-1], history.history['accuracy'][-1]
 
     def update_target(self):
+        """ Updates the target model with the weights of the current model
+
+        Arguments:
+            None
+        
+        Return:
+            None
+        """
+
         self.target_model.set_weights(self.model.get_weights())
