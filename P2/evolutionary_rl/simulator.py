@@ -167,6 +167,7 @@ def simulate_single_country(country_index: int, shared_total_rewards: list, shar
             while waiting_for_model(shared_total_rewards): continue
             
             if np.argmax(shared_total_rewards) == country_index:
+                mlflow.keras.log_model(model.model, "best_model")
                 test_model(model, shared_weights)
                 shared_total_rewards = mp.Manager().list()
 
@@ -206,8 +207,11 @@ def test(num_tests: int):
 def run():
 
     start = time.time()
+    
     s = Simulator()
-    print(s.simulate_parallel(10, True))
+    test_reward = s.simulate_parallel(10, True)
+    mlflow.log_metric('test_reward', test_reward)
+
     print(f"took: {time.time() - start}")
 
 def main():
