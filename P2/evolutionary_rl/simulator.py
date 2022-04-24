@@ -179,7 +179,7 @@ def test_model(model: Model, shared_list: list):
     model.total_reward = 0
 
     while(not env.country_finished(4)):
-        model.test_step(env)
+        model.step(env)
 
     shared_list.append(model.total_reward)
 
