@@ -19,13 +19,29 @@ class Simulator:
     models: list
 
     def __init__(self) -> None:
+        """ Initialize the simulator and configure the experimentation
         
+        Arguments:
+            None
+            
+        Returns:   
+            None
+        """
+                
         self.env = Environment()
         self.models = []
 
         self.configure_mlflow()
 
     def configure_mlflow(self):
+        """ Configure the MLflow environment
+        
+        Arguments:
+            None
+            
+        Returns:
+            None
+        """
 
         #notes = input("Enter a note: ")
         notes = 'test'
@@ -43,6 +59,14 @@ class Simulator:
 
 
     def graph_action_distribution(self, actions: list, title: str):
+        """ Graph the action distribution
+
+        Arguments:
+            actions (list) -- List of actions taken
+        
+        Returns:
+            None
+        """
 
         data = {}
         for action in actions:
@@ -59,67 +83,17 @@ class Simulator:
         plt.savefig(f'{title}_bar.png')
         mlflow.log_artifact(f'{title}_bar.png')
 
-    def simulate(self):
-
-        [self.models.append(Model((5, 15), 7, i)) for i in range(5)]
-        most_successful_models = []
-
-        for i in tqdm(range(10)):
-            
-            self.env.reset()
-
-            while(not self.env.all_countries_finished()):
-                
-                training_threads = []
-                for model in self.models:
-                    training_threads.append(model.step(self.env))
-
-                if training_threads[0]:
-                    [t.join() for t in training_threads]
-                        
-            total_rewards = [self.models[i].total_reward for i in range(len(self.models))]
-            most_successful_model = np.argmax(total_rewards)
-            most_successful_models.append(most_successful_model)
-            print(f'Most successful model: {most_successful_model}')
-            
-            for i in range(len(self.models)):
-                self.models[i].total_reward = 0
-                self.models[i].update_target(self.models[most_successful_model].model)
-
-        print(f'Most successful models: {most_successful_models}')
-        return most_successful_models[-1]
-                
-    def test(self, best_model: int):
-
-        actions = []
-        rewards = []
-          
-        done = False
-        steps_to_update_target_model = 0
-        self.env.reset()
-
-        total_reward = 0
-
-        while(not done):
-
-            current_state = self.env.current_state()
-                
-            current_reshaped = np.array(current_state).reshape([1, 5, 15])
-            predicted = self.model.model(current_reshaped).numpy()[0]          # Predicting best action, not sure why flatten (pushing 2d into 1d)
-            action = np.argmax(predicted) 
-        
-            actions.append(action)
-            reward, done = self.env.step(action)      # Executing action on current state and getting reward, this also increments out current state
-            total_reward += reward
-
-        
-        print(f'Made it to: {total_reward}')
-        rewards.append(total_reward)
-
-        mlflow.log_metric("avg_test_reward", sum(rewards)/len(rewards))
-        self.graph_action_distribution(actions, "test")
-
     def simulate_parallel(self, replicas: int, test: bool = False):
+        """ Simulate the environment in parallel
+        
+        Arguments:
+            replicas (int) -- Number of replicas to run
+
+            test (bool) -- Whether to test the model or not
+
+        Returns:
+            None
+        """
 
         pool = mp.Pool(processes=replicas)
         shared_total_rewards = mp.Manager().list()
@@ -135,44 +109,70 @@ class Simulator:
         if test: return shared_weights[-1]
 
 def simulate_single_country(country_index: int, shared_total_rewards: list, shared_weights: list, test: bool):
-
-        env = Environment()
-        model = Model((5, 15), 7, 4)        # Only using the one country
-        waiting_for_model = lambda rewards: [1 for reward in rewards if not reward]
-
-        for i in tqdm(range(100)):
-            
-            env.reset()
-            model.total_reward = 0
-
-            while(not env.country_finished(4)):
-                model.step(env)
-
-            shared_total_rewards[country_index] = model.total_reward
-
-            while waiting_for_model(shared_total_rewards): continue
-
-            if np.argmax(shared_total_rewards) == country_index:
-                shared_weights.append(model.model.get_weights())
-                mlflow.log_metric('total_reward', model.total_reward)
-
-            while len(shared_weights) <= i: continue
-
-            model.update_target(shared_weights[-1])
-            shared_total_rewards[country_index] = False
+    """ Simulate a single country. Executes the model for a single country
+    for each epoch independently. At the end of the epoch, syncs with the other
+    model to dictate best performance and update the weights.
+    
+    Arguments:
+        country_index (int) -- The index of the country to simulate
         
-        if test:
+        shared_total_rewards (list) -- Shared list of total rewards 
+        
+        shared_weights (list) -- Shared list of weights
+        
+        test (bool) -- Whether to test the model or not
+        
+    Returns:
+        None
+    """
 
-            shared_total_rewards[country_index] = model.total_reward
-            while waiting_for_model(shared_total_rewards): continue
-            
-            if np.argmax(shared_total_rewards) == country_index:
-                mlflow.keras.log_model(model.model, "best_model")
-                test_model(model, shared_weights)
-                shared_total_rewards = mp.Manager().list()
+    env = Environment()
+    model = Model((5, 15), 7, 4)        # Only using the one country
+    waiting_for_model = lambda rewards: [1 for reward in rewards if not reward]
+
+    for i in tqdm(range(100)):
+        
+        env.reset()
+        model.total_reward = 0
+
+        while(not env.country_finished(4)):
+            model.step(env)
+
+        shared_total_rewards[country_index] = model.total_reward
+
+        while waiting_for_model(shared_total_rewards): continue
+
+        if np.argmax(shared_total_rewards) == country_index:
+            shared_weights.append(model.model.get_weights())
+            mlflow.log_metric('total_reward', model.total_reward)
+
+        while len(shared_weights) <= i: continue
+
+        model.update_target(shared_weights[-1])
+        shared_total_rewards[country_index] = False
+    
+    if test:
+
+        shared_total_rewards[country_index] = model.total_reward
+        while waiting_for_model(shared_total_rewards): continue
+        
+        if np.argmax(shared_total_rewards) == country_index:
+            mlflow.keras.log_model(model.model, "best_model")
+            test_model(model, shared_weights)
+            shared_total_rewards = mp.Manager().list()
 
 
 def test_model(model: Model, shared_list: list):
+    """ Test the model from a spawned parallel process
+
+    Arguments:
+        model (Model) -- The model to test
+
+        shared_list (list) -- The list of weights to test
+
+    Returns:
+        None
+    """
 
     env = Environment()
     env.reset()
@@ -183,29 +183,8 @@ def test_model(model: Model, shared_list: list):
 
     shared_list.append(model.total_reward)
 
-def temp(results: list):
-
-    s = Simulator()
-    results.append(s.simulate_parallel(True))
-
-def test(num_tests: int):
-
-    results = mp.Manager().list()
-    processes = []
-
-    for i in range(num_tests):
-        p = mp.Process(target=temp, args=(results,))
-        p.daemon = False
-        processes.append(p)
-        processes[-1].start()
-
-    [p.join() for p in processes]
-
-    with open(f'test/{0}.txt', 'w') as f:
-        f.write(f'Made it to: {sum(results)/len(results)}')
-
-def run():
-
+def main():
+    
     start = time.time()
     
     s = Simulator()
@@ -213,11 +192,6 @@ def run():
     mlflow.log_metric('test_reward', test_reward)
 
     print(f"took: {time.time() - start}")
-
-def main():
-    
-    run()
-    #test(1)
 
 if __name__ == '__main__':
     main()

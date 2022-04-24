@@ -31,6 +31,19 @@ class Model():
     steps_taken: int = 0
 
     def __init__(self, state_shape: int, action_shape: int, country_index: int) -> None:
+        """ Initializes the model and target model. Create multi-gpu strategy to 
+        train model in parallel
+        
+        Arguments:
+            state_shape (int): The shape of the current state space
+
+            action_shape (int): The shape of the current action space
+
+            country_index (int): The index of the country to be trained
+
+        Return:
+            None
+        """
         
         physical_devices = tf.config.list_physical_devices('GPU')
         for gpu in physical_devices:
@@ -66,49 +79,37 @@ class Model():
         with self.strategy.scope():
 
             model = keras.Sequential()      
-            model.add(LSTM(100, input_shape=state_shape, return_sequences=True, activation='relu'))
-            model.add(LSTM(100, return_sequences=True, activation='relu'))       
-            model.add(LSTM(40, activation='relu')) 
-            model.add(keras.layers.Dense(20, activation='relu')) 
+            model.add(LSTM(150, input_shape=state_shape, return_sequences=True, activation='relu'))
+            model.add(LSTM(150, return_sequences=True, activation='relu'))       
+            model.add(LSTM(80, activation='relu')) 
+            model.add(keras.layers.Dense(40, activation='relu')) 
             model.add(keras.layers.Dense(action_shape, activation='softmax'))
             model.compile(loss=tf.keras.losses.CategoricalCrossentropy(), optimizer=tf.keras.optimizers.SGD(learning_rate=0.001), metrics=['accuracy'], run_eagerly=True)
             return model
 
-    def step_parallel(self, environment: Environment) -> int:
-
-        random_number = np.random.rand()
-        current_state = environment.current_state(self.country_index)
-
-        if random_number <= self.epsilon:  # Explore  
-            action = random.randint(0, 6)
-
-        else: 
-            current_reshaped = np.array(current_state).reshape([1, self.state_shape[0], self.state_shape[1]])
-            predicted = self.model(current_reshaped).numpy()[0]          # Predicting best action, not sure why flatten (pushing 2d into 1d)
-            action = np.argmax(predicted) 
-        
-        reward, done = environment.step(action, self.country_index)      # Executing action on current state and getting reward, this also increments out current state
-        new_state = environment.current_state(self.country_index)               
-        self.replay_memory.append([current_state, action, reward, new_state, done])      # Adding everything to the replay memory
-        self.total_reward += reward
-
-        self.steps_taken += 1
-
-        if done:
-            self.train(done)
-            self.episode += 1
-            self.epsilon = self.min_epsilon + (self.max_epsilon - self.min_epsilon) * np.exp(-0.01 * self.episode)
-
-        elif self.steps_taken % 10 == 0:
-            self.train(done)
-
     def predict(self, state: np.array) -> np.array:
+        """ Predict the action to take given the current state
+        
+        Arguments:
+            state (np.array): The current state
+            
+        Return:
+            action (np.array): The action to take
+        """
 
         current_reshaped = np.array(state).reshape([1, self.state_shape[0], self.state_shape[1]])
         action = self.model(current_reshaped).numpy()[0] 
         return np.argmax(action) 
 
     def test_step(self, environment: Environment) -> int:
+        """ Test step is used to test the model on the test set
+        
+        Arguments:
+            environment (Environment): The environment to test the model on
+            
+        Return:
+            None
+        """
 
         current_state = environment.current_state(self.country_index)
         action = self.predict(current_state)
@@ -117,6 +118,14 @@ class Model():
         self.total_reward += reward
 
     def step(self, environment: Environment) -> int:
+        """ Step is used to take a step in the environment and update the model
+        
+        Arguments:
+            environment (Environment): The environment to take a step in
+            
+        Return:
+            None
+        """
 
         random_number = np.random.rand()
         current_state = environment.current_state(self.country_index)
@@ -135,30 +144,24 @@ class Model():
         self.steps_taken += 1
 
         if done:
-            self.train(done)
+            self.train(done, self.state_shape)
             self.episode += 1
             self.epsilon = self.min_epsilon + (self.max_epsilon - self.min_epsilon) * np.exp(-0.01 * self.episode)
             self.update_target(self.model.get_weights())
 
         elif self.steps_taken % 10 == 0:
-            self.train(done)
+            self.train(done, self.state_shape)
 
 
-    def train(self, done: bool) -> None:
+    def train(self, done: bool, state_space: list) -> None:
         """ Thes the current enviroment, replay memeory, model and target model
         to test if there is enoguh memory cached. If there is, takes a random 128 
         examples from the memory and uses that to retrain the target model 
         
         Arguments:
-            env (TrainingEnviroment): The current TrainingEnviroment object assoicated with the training
-
-            replay_memory (deque): The current cached memeory associated with the training
-
-            model (object): The given neural network
-
-            target_model (object): The given nerual network to train
-
             done (bool): Whether training has finished or not
+
+            state_space (list): The current state space
         
         Return:
             None
@@ -171,34 +174,34 @@ class Model():
         discount_factor = 0.618     
 
         MIN_REPLAY_SIZE = 500      
-        if len(self.replay_memory) < MIN_REPLAY_SIZE:        # Only do this function when we've gone through atleast 1000 steps?
+        if len(self.replay_memory) < MIN_REPLAY_SIZE:       
             return
         
-        data_set_size = 256     # Getting random 128 batch sample from 
-        mini_batch = random.sample(self.replay_memory, data_set_size)       # Grabbing said random sample
+        data_set_size = 256      
+        mini_batch = random.sample(self.replay_memory, data_set_size)       
         
-        current_states = np.array([transition[0] for transition in mini_batch])     # Getting all the states from your sampled mini batch, because index 0 is the observation
-        current_states = np.array(current_states).reshape([len(current_states), 5, 15])
-        current_qs_list = self.model(current_states).numpy()     # Predict the q values based on all the historical state
+        current_states = np.array([transition[0] for transition in mini_batch])     
+        current_states = np.array(current_states).reshape([len(current_states), state_space[0], state_space[1]])
+        current_qs_list = self.model(current_states).numpy()     
 
-        new_current_states = np.array([transition[3] for transition in mini_batch]) # Getting all of the states after we executed our action? 
-        new_current_states = np.array(new_current_states).reshape([len(new_current_states), 5, 15])
-        future_qs_list = self.target_model(new_current_states).numpy()       # the q values resulting in our action
+        new_current_states = np.array([transition[3] for transition in mini_batch]) 
+        new_current_states = np.array(new_current_states).reshape([len(new_current_states), state_space[0], state_space[1]])
+        future_qs_list = self.target_model(new_current_states).numpy()       
 
         X = []
         Y = []
 
-        for index, (observation, action, reward, new_observation, done) in enumerate(mini_batch):       # Looping through our randomly sampled batch
+        for index, (observation, action, reward, new_observation, done) in enumerate(mini_batch):       
             
-            if not done:                                                                                # If we havent finished the game or died?
-                max_future_q = reward + discount_factor * np.max(future_qs_list[index])                 # Calculuting max value for each step using the discount factor
+            if not done:                                                                                
+                max_future_q = reward + discount_factor * np.max(future_qs_list[index])                 
             else:
-                max_future_q = reward                                                                   # if we finished then max is just the given reqard
+                max_future_q = reward                                                                 
             
-            current_qs = current_qs_list[index]     # Getting current value of q's
-            current_qs[action] = (1 - learning_rate) * current_qs[action] + learning_rate * max_future_q        # Updating the q values
+            current_qs = current_qs_list[index]     
+            current_qs[action] = (1 - learning_rate) * current_qs[action] + learning_rate * max_future_q        
 
-            X.append(observation)           # Creating model input based off this
+            X.append(observation)           
             Y.append(current_qs)             
 
         train_data = tf.data.Dataset.from_tensor_slices((X,Y))
@@ -213,6 +216,14 @@ class Model():
             f.write(f'loss: {history.history["loss"][-1]} - acc: {history.history["accuracy"][-1]} - epsilon: {self.epsilon}\n')
 
     def update_target(self, model_weights: np.array) -> None:
+        """ Updates the target model with the weights of the current model
+
+        Arguments:
+            model_weights (np.array): The weights of the current model
+        
+        Return:
+            None
+        """
         
         self.target_model.set_weights(model_weights)
 
