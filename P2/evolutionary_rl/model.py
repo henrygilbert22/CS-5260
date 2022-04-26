@@ -83,8 +83,12 @@ class Model():
             model.add(LSTM(150, return_sequences=True, activation='relu'))       
             model.add(LSTM(80, activation='relu')) 
             model.add(keras.layers.Dense(40, activation='relu')) 
+
             model.add(keras.layers.Dense(action_shape, activation='softmax'))
-            model.compile(loss=tf.keras.losses.CategoricalCrossentropy(), optimizer=tf.keras.optimizers.SGD(learning_rate=0.001), metrics=['accuracy'], run_eagerly=True)
+            model.compile(loss=tf.keras.losses.CategoricalCrossentropy(), 
+            optimizer=tf.keras.optimizers.SGD(learning_rate=0.001), 
+            metrics=['accuracy'], run_eagerly=True)
+
             return model
 
     def predict(self, state: np.array) -> np.array:
@@ -114,7 +118,7 @@ class Model():
         current_state = environment.current_state(self.country_index)
         action = self.predict(current_state)
 
-        reward, done = environment.step(action, self.country_index)      # Executing action on current state and getting reward, this also increments out current state
+        reward, done = environment.step(action, self.country_index)      
         self.total_reward += reward
 
     def step(self, environment: Environment) -> int:
@@ -134,11 +138,11 @@ class Model():
             action = random.randint(0, 6)
 
         else: 
-            action = self.predict(current_state)        # Predicting best action, not sure why flatten (pushing 2d into 1d)
+            action = self.predict(current_state)       
         
-        reward, done = environment.step(action, self.country_index)      # Executing action on current state and getting reward, this also increments out current state
+        reward, done = environment.step(action, self.country_index)     
         new_state = environment.current_state(self.country_index)               
-        self.replay_memory.append([current_state, action, reward, new_state, done])      # Adding everything to the replay memory
+        self.replay_memory.append([current_state, action, reward, new_state, done])      
         self.total_reward += reward
 
         self.steps_taken += 1
@@ -146,7 +150,8 @@ class Model():
         if done:
             self.train(done, self.state_shape)
             self.episode += 1
-            self.epsilon = self.min_epsilon + (self.max_epsilon - self.min_epsilon) * np.exp(-0.01 * self.episode)
+            self.epsilon = self.min_epsilon + (self.max_epsilon - self.min_epsilon) * \
+                np.exp(-0.01 * self.episode)
             self.update_target(self.model.get_weights())
 
         elif self.steps_taken % 10 == 0:
@@ -181,11 +186,19 @@ class Model():
         mini_batch = random.sample(self.replay_memory, data_set_size)       
         
         current_states = np.array([transition[0] for transition in mini_batch])     
-        current_states = np.array(current_states).reshape([len(current_states), state_space[0], state_space[1]])
+        current_states = np.array(current_states).reshape(
+            [len(current_states), 
+            state_space[0], 
+            state_space[1]]
+        )
         current_qs_list = self.model(current_states).numpy()     
 
         new_current_states = np.array([transition[3] for transition in mini_batch]) 
-        new_current_states = np.array(new_current_states).reshape([len(new_current_states), state_space[0], state_space[1]])
+        new_current_states = np.array(new_current_states).reshape(
+            [len(new_current_states), 
+            state_space[0], 
+            state_space[1]]
+        )
         future_qs_list = self.target_model(new_current_states).numpy()       
 
         X = []
@@ -199,7 +212,8 @@ class Model():
                 max_future_q = reward                                                                 
             
             current_qs = current_qs_list[index]     
-            current_qs[action] = (1 - learning_rate) * current_qs[action] + learning_rate * max_future_q        
+            current_qs[action] = (1 - learning_rate) * current_qs[action] + \
+            learning_rate * max_future_q        
 
             X.append(observation)           
             Y.append(current_qs)             
@@ -213,7 +227,8 @@ class Model():
         history = self.model.fit(train_data, verbose=1, shuffle=False) 
 
         with open(f'processes/{self.country_index}', 'a') as f:
-            f.write(f'loss: {history.history["loss"][-1]} - acc: {history.history["accuracy"][-1]} - epsilon: {self.epsilon}\n')
+            f.write(f'loss: {history.history["loss"][-1]} \
+            - acc: {history.history["accuracy"][-1]} - epsilon: {self.epsilon}\n')
 
     def update_target(self, model_weights: np.array) -> None:
         """ Updates the target model with the weights of the current model

@@ -8,6 +8,7 @@ from keras import backend as BK
 import mlflow
 
 class OUActionNoise:
+
     def __init__(self, mean, std_deviation, theta=0.15, dt=1e-2, x_initial=None):
         """ Initializes the OUActionNoise object
         
@@ -159,11 +160,19 @@ class DDPGModel():
         init = tf.keras.initializers.HeUniform() 
         model = keras.Sequential()
 
-        model.add(LSTM(40, input_shape=(5, 15), return_sequences=True, activation='relu', kernel_initializer=init))
-        model.add(LSTM(40, return_sequences=True, activation='relu', kernel_initializer=init))       
+        model.add(LSTM(40, input_shape=(5, 15), return_sequences=True, 
+            activation='relu', kernel_initializer=init))
+        model.add(LSTM(40, return_sequences=True, activation='relu', 
+            kernel_initializer=init))       
         model.add(LSTM(20, activation='relu', kernel_initializer=init))  
+
         model.add(keras.layers.Dense(action_shape, activation='softmax'))
-        model.compile(loss=tf.keras.losses.CategoricalCrossentropy(), optimizer=tf.keras.optimizers.Adam(learning_rate=0.0001), metrics=['accuracy'], run_eagerly=True)
+
+        model.compile(loss=tf.keras.losses.CategoricalCrossentropy(), 
+            optimizer=tf.keras.optimizers.Adam(learning_rate=0.0001), 
+            metrics=['accuracy'], 
+            run_eagerly=True
+        )
         
         return model
     
@@ -183,15 +192,12 @@ class DDPGModel():
         state_out = LSTM(50, activation="relu", return_sequences=True)(state_input)
         state_out = LSTM(50, activation="relu")(state_out)
 
-        # Action as input
         action_input = keras.layers.Input(shape=(7))
         action_out = keras.layers.Dense(25, activation="relu")(action_input)
 
-        # Both are passed through seperate layer before concatenating
         concat = keras.layers.Concatenate()([state_out, action_out])
         outputs = keras.layers.Dense(1)(concat)
 
-        # Outputs single value for give state-action
         model = tf.keras.Model([state_input, action_input], outputs)
         return model
             
@@ -203,7 +209,8 @@ class DDPGModel():
         examples from the memory and uses that to retrain the target model 
         
         Arguments:
-            env (TrainingEnviroment): The current TrainingEnviroment object assoicated with the training
+            env (TrainingEnviroment): The current TrainingEnviroment object assoicated 
+                with the training
 
             replay_memory (deque): The current cached memeory associated with the training
 

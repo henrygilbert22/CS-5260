@@ -100,15 +100,18 @@ class Simulator:
         shared_weights = mp.Manager().list()
 
         for i in range(replicas):
+            
             shared_total_rewards.append(False)
-            pool.apply_async(simulate_single_country, args=(i, shared_total_rewards, shared_weights, test,))
+            pool.apply_async(simulate_single_country, args=(i, shared_total_rewards, 
+                shared_weights, test,))
         
         pool.close()
         pool.join()
 
         if test: return shared_weights[-1]
 
-def simulate_single_country(country_index: int, shared_total_rewards: list, shared_weights: list, test: bool):
+def simulate_single_country(country_index: int, shared_total_rewards: list, 
+    shared_weights: list, test: bool):
     """ Simulate a single country. Executes the model for a single country
     for each epoch independently. At the end of the epoch, syncs with the other
     model to dictate best performance and update the weights.

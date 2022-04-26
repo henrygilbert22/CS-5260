@@ -111,21 +111,21 @@ class Simulator:
                 random_number = np.random.rand()
                 current_state = self.env.current_state()
 
-                if random_number <= epsilon:  # Explore  
-                    action = self.env.random_action() # Just randomly choosing an action
+                if random_number <= epsilon:  
+                    action = self.env.random_action() 
                 
                 else: #Exploitting
                     action = self.model.policy(current_state)
                 
                 actions.append(action)
-                reward, done = self.env.step(action)      # Executing action on current state and getting reward, this also increments out current state
+                reward, done = self.env.step(action)      
                 new_state = self.env.current_state()               
                 total_reward += reward
                 
                 action_set = [0] * 7
                 action_set[action] = 1
 
-                replay_memory.append([current_state, action_set, reward, new_state])      # Adding everything to the replay memory
+                replay_memory.append([current_state, action_set, reward, new_state])      
                 self.model.learn(replay_memory)
 
             mlflow.log_metric("reward", total_reward)
@@ -146,9 +146,9 @@ class Simulator:
 
         self.model = Model(15,7)
 
-        epsilon = 1 # Epsilon-greedy algorithm in initialized at 1 meaning every step is random at the start - This decreases over time
-        max_epsilon = 1 # You can't explore more than 100% of the time - Makes sense
-        min_epsilon = 0.01 # At a minimum, we'll always explore 1% of the time - Optimize somehow?
+        epsilon = 1 
+        max_epsilon = 1 
+        min_epsilon = 0.01 
         episode = 0
         replay_memory = deque(maxlen=10000)
         actions = []
@@ -167,24 +167,21 @@ class Simulator:
                 random_number = np.random.rand()
                 current_state = self.env.current_state()
 
-                if random_number <= epsilon:  # Explore  
-                    action = self.env.random_action() # Just randomly choosing an action
+                if random_number <= epsilon:  
+                    action = self.env.random_action() 
                 
-                else: #Exploitting
-                    
-                    current_reshaped = np.array(current_state).reshape([1, 5, 15])
-                    predicted = self.model.model(current_reshaped).numpy()[0]          # Predicting best action, not sure why flatten (pushing 2d into 1d)
-                    action = np.argmax(predicted) 
+                else:
+                    action = self.model.predict(current_state)        
                     
                 actions.append(action)
 
-                reward, done = self.env.step(action)      # Executing action on current state and getting reward, this also increments out current state
+                reward, done = self.env.step(action)      
                 new_state = self.env.current_state()               
-                replay_memory.append([current_state, action, reward, new_state, done])      # Adding everything to the replay memory
+                replay_memory.append([current_state, action, reward, new_state, done])      
                 total_reward += reward
 
-                if steps_to_update_target_model % 10 == 0 or done:                   # If we've done 4 steps or have lost/won, update the main neural net, not target
-                    self.model.train(replay_memory, done)            # training the main model
+                if steps_to_update_target_model % 10 == 0 or done:                   
+                    self.model.train(replay_memory, done)           
  
             episode += 1
             epsilon = min_epsilon + (max_epsilon - min_epsilon) * np.exp(-0.01 * episode)

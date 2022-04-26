@@ -119,7 +119,8 @@ class Environment:
             None
         """
         
-        external_biggest_resource = lambda interal_r, external_rs: external_rs[0] if external_rs[0] != interal_r else external_rs[1]
+        external_biggest_resource = lambda interal_r, external_rs: \
+            external_rs[0] if external_rs[0] != interal_r else external_rs[1]
 
         tradeable_resources = {
             'metalic_elm': self.countries[country_index].metalic_elm,
@@ -181,7 +182,8 @@ class Environment:
         """
         
         previous_value = self.curr_state_value(country_index)
-        reward = lambda curr, previous: round(curr/previous, 2) if curr > previous else round(0.9 - previous/curr, 2)
+        reward = lambda curr, previous: round(curr/previous, 2) \
+            if curr > previous else round(0.9 - previous/curr, 2)
 
         if action == 0:
             pass    

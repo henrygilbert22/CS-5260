@@ -214,6 +214,14 @@ class Country:
         self.adjust_continuals()
 
     def adjust_continuals(self):
+        """ Function to adjust the continuals of a given country
+        
+        Arguements:
+            None
+            
+        Returns:
+            None
+        """
 
         if self.water + (self.max_water * 0.1) < self.max_water:     #increasing water by 10%
             self.water += (self.max_water * 0.1)
