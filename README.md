@@ -12,7 +12,7 @@ Part two is further split into traditioanl_rl and evolutionary_rl.
 
 For executing either traditional_rl or evolutioanry_rl, navigate to their respective 			folders and run:
 
-    ``   python3 simulator.py   ``
+      python3 simulator.py   
 
 All relevant hyperparameters can be adjusted within in the main function.
 
